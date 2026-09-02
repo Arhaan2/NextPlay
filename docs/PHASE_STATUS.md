@@ -6,6 +6,7 @@
 **Integration branch:** `main`
 **Known-good commit:** none
 **Known-good deployment:** none
+**GitHub repository:** https://github.com/Arhaan2/NextPlay
 
 ## Phase table
 
@@ -23,11 +24,11 @@
 
 ## Current prerequisites
 
-- [ ] Repository created.
-- [ ] Planning package copied into root.
-- [ ] Node/npm versions recorded.
+- [x] Repository created and verified public at https://github.com/Arhaan2/NextPlay.
+- [x] Planning package copied into root and verified remotely at commit `76b1aff877ab1e52fc5ae934e14fc4d30656e3d5`.
+- [x] Node `v24.18.0` and npm `11.16.0` recorded.
 - [ ] Deployment provider selected.
-- [ ] Codex project trusted and custom agents loaded.
+- [x] Codex project trusted and all five custom agents loaded.
 
 ## Current phase acceptance
 
