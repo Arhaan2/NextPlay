@@ -4,7 +4,7 @@
 **Current phase:** Phase 0 — Repository, toolchain, and live deployment
 **Overall status:** PHASE 0 ACCEPTED
 **Integration branch:** `main`
-**Known-good commit:** pending Phase 0 integration commit
+**Known-good commit:** `03b64cb881b3b940b0cd0394f5e9ec17f517833b`
 **Known-good deployment:** https://next-play-lake.vercel.app
 **GitHub repository:** https://github.com/Arhaan2/NextPlay
 
@@ -12,7 +12,7 @@
 
 | Phase | Status | Accepted commit | Automated gate | External gate | Notes |
 |---|---|---|---|---|---|
-| 0. Foundation/deploy | PASS | pending integration commit | `npm ci`; `npm run verify` PASS (3 tests) | PASS — fresh no-auth browser load | Vercel production alias: https://next-play-lake.vercel.app |
+| 0. Foundation/deploy | PASS | `03b64cb881b3b940b0cd0394f5e9ec17f517833b` | `npm ci`; `npm run verify` PASS (3 tests) | PASS — fresh no-auth browser load | Vercel production alias: https://next-play-lake.vercel.app |
 | 1. Domain/commands | NOT STARTED | | | n/a | |
 | 2. Court/timeline | NOT STARTED | | | visual fixture | |
 | 3. WebMCP read/add | NOT STARTED | | | Gate A | |
