@@ -1,6 +1,6 @@
 name = "bug_fixer"
 description = "Focused defect repair agent that fixes verified production failures without weakening tests or expanding scope."
-model = "gpt-5.6"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """

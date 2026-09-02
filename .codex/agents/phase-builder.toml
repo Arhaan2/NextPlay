@@ -1,6 +1,6 @@
 name = "phase_builder"
 description = "Implementation specialist that builds exactly one accepted phase of NextPlay without widening scope."
-model = "gpt-5.6"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """
