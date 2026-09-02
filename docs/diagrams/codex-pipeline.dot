@@ -1,0 +1,25 @@
+digraph CodexPipeline {
+  graph [rankdir=TB, bgcolor="white", pad=0.35, nodesep=0.5, ranksep=0.65, splines=polyline, fontname="Arial", labelloc=t, label="Codex Phase Delivery Pipeline", fontsize=18];
+  node [shape=box, style="rounded,filled", fillcolor="#F7F7F5", color="#333333", fontname="Arial", fontsize=11, margin="0.16,0.09"];
+  edge [color="#555555", penwidth=1.2, arrowsize=0.75, fontname="Arial", fontsize=9];
+
+  orchestrator [label="ORCHESTRATOR\nFreeze phase brief + acceptance", fillcolor="#E8F1FF", penwidth=2];
+  builder [label="phase_builder\nImplement production behavior"];
+  author [label="test_author\nAdd independent contract tests"];
+  runner [label="test_runner\nExecute + classify evidence"];
+  fixer [label="bug_fixer\nSmallest production fix", fillcolor="#FFF1D6"];
+  rerun [label="test_runner\nRe-run targeted + full gate"];
+  reviewer [label="release_reviewer\nRead-only owner review"];
+  commit [label="ORCHESTRATOR\nUpdate status + commit accepted phase", fillcolor="#E5F5E8", penwidth=2];
+  rescope [label="ORCHESTRATOR\nRescope or cut after two failed cycles", fillcolor="#FCE8E6"];
+
+  orchestrator -> builder -> author -> runner;
+  runner -> reviewer [label="PASS"];
+  runner -> fixer [label="FAIL"];
+  fixer -> rerun;
+  rerun -> reviewer [label="PASS"];
+  rerun -> fixer [label="one retry"];
+  rerun -> rescope [label="still failing"];
+  reviewer -> commit [label="PASS"];
+  reviewer -> fixer [label="blocking defect"];
+}

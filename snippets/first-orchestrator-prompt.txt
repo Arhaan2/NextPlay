@@ -1,0 +1,35 @@
+Work as the primary orchestrator for NextPlay.
+
+Read, in order:
+- AGENTS.md
+- docs/DESIGN.md
+- docs/BUILD_PLAN.md
+- docs/REPOSITORY_STRUCTURE.md
+- docs/CODEX_RUNBOOK.md
+- docs/PHASE_STATUS.md
+- docs/phases/00-foundation.md
+
+Execute only Phase 0: Foundation and Live Deployment.
+
+Use the configured custom agents in this exact order:
+1. phase_builder
+2. test_author
+3. test_runner
+4. bug_fixer only if tests fail, followed by test_runner again
+5. release_reviewer
+
+Wait for each role before starting the next write-capable role. Subagents must not
+commit, merge, rebase, force-push, or edit outside their role. Preserve existing
+user changes.
+
+After all agents return, inspect the final diff yourself. Update
+docs/PHASE_STATUS.md and commit only if the phase gate passes. Report:
+- phase PASS/FAIL/BLOCKED
+- behavior delivered
+- files changed
+- tests added
+- exact commands and results
+- acceptance evidence
+- public deployment URL
+- risks/deferred work
+- exact next action

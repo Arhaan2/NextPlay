@@ -1,0 +1,75 @@
+digraph RuntimeArchitecture {
+  graph [rankdir=TB, newrank=true, bgcolor="white", pad=0.35, nodesep=0.45, ranksep=0.65, splines=polyline, fontname="Arial", labelloc=t, label="NextPlay — Runtime Architecture", fontsize=18];
+  node [shape=box, style="rounded,filled", fillcolor="#F7F7F5", color="#333333", fontname="Arial", fontsize=11, margin="0.16,0.09"];
+  edge [color="#555555", penwidth=1.2, arrowsize=0.75, fontname="Arial", fontsize=9];
+
+  subgraph cluster_inputs {
+    label="Inputs / Adapters";
+    color="#D0D0D0";
+    style="rounded";
+    coach [label="Coach UI controls"];
+    agent [label="ChatGPT / Codex agent"];
+    preset [label="Preset / Reset"];
+    ui_adapter [label="UI command adapter"];
+    webmcp [label="Top-level WebMCP adapter"];
+    tracing [label="Tool tracing wrapper"];
+    preset_adapter [label="Preset adapter"];
+    coach -> ui_adapter;
+    agent -> webmcp -> tracing;
+    preset -> preset_adapter;
+  }
+
+  commands [label="Shared playCommands transaction layer", fillcolor="#FFF1D6", penwidth=2];
+
+  subgraph cluster_transaction {
+    label="One Persistent Mutation Path";
+    color="#D0D0D0";
+    style="rounded";
+    parse [label="Zod + domain\ninput validation"];
+    draft [label="Draft mutation"];
+    lock [label="Locked-action\npreservation guard"];
+    invariants [label="Domain invariant checks"];
+    commit [label="Atomic commit\n+ one playRevision"];
+    parse -> draft -> lock -> invariants -> commit;
+  }
+
+  store [label="Zustand Store\nPlay Document + Session State", shape=cylinder, fillcolor="#E8F1FF", penwidth=2];
+
+  subgraph cluster_engines {
+    label="Pure Derived Engines";
+    color="#D0D0D0";
+    style="rounded";
+    validator [label="Validation engine"];
+    animation [label="Geometry + animation engine"];
+  }
+
+  subgraph cluster_views {
+    label="Visible Shared Workspace";
+    color="#D0D0D0";
+    style="rounded";
+    court [label="SVG Court"];
+    timeline [label="Timeline + Inspector"];
+    activity [label="Activity Rail"];
+    checks [label="Play Checks"];
+  }
+
+  local [label="localStorage adapter\n(P1 only)", style="rounded,dashed,filled", fillcolor="#FFFFFF"];
+
+  ui_adapter -> commands;
+  tracing -> commands;
+  preset_adapter -> commands;
+  commands -> parse;
+  commit -> store;
+  store -> validator;
+  store -> animation;
+  store -> court;
+  store -> timeline;
+  store -> activity;
+  validator -> checks;
+  animation -> court;
+  store -> local [style=dashed, label=" optional"];
+
+  {rank=same; coach; agent; preset;}
+  {rank=same; validator; animation;}
+  {rank=same; court; timeline; activity; checks;}
+}
