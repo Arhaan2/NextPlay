@@ -1,3 +1,5 @@
+import { DomainHarness } from "./dev/DomainHarness";
+
 export function App() {
   return (
     <main className="app-shell">
@@ -96,6 +98,8 @@ export function App() {
           validate it.”
         </p>
       </footer>
+
+      {import.meta.env.DEV ? <DomainHarness /> : null}
     </main>
   );
 }

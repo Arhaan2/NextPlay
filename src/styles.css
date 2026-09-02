@@ -146,6 +146,27 @@ h2 {
   opacity: 0.65;
 }
 
+.dev-domain-harness {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: 1px dashed #65503d;
+  border-radius: 0 0 14px 14px;
+  background: rgba(26, 31, 28, 0.9);
+}
+
+.dev-domain-harness p {
+  margin: 0;
+  color: #d7ded9;
+  font-size: 0.82rem;
+}
+
+.dev-domain-harness output {
+  color: #f0b46d;
+  font-size: 0.8rem;
+}
+
 .play-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(140px, 1fr)) auto;
