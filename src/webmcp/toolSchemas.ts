@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { actionBatchSchema } from "../domain/schemas";
+import { actionBatchSchema, actionPatchSchema } from "../domain/schemas";
 import { OFFENSE_IDS } from "../domain/types";
 import { ZONE_IDS } from "../domain/zones";
 import type { ModelContextJsonSchema } from "./modelContext";
@@ -17,7 +17,16 @@ export const addPlayActionsInputSchema = z
   .strict();
 
 export type GetPlayStateInput = z.infer<typeof getPlayStateInputSchema>;
+export const updatePlayActionInputSchema = z
+  .object({
+    actionId: z.string().min(1),
+    expectedRevision: z.number().finite().int().nonnegative().optional(),
+    patch: actionPatchSchema,
+  })
+  .strict();
+
 export type AddPlayActionsInput = z.infer<typeof addPlayActionsInputSchema>;
+export type UpdatePlayActionInput = z.infer<typeof updatePlayActionInputSchema>;
 
 const pointSchema: ModelContextJsonSchema = {
   type: "object",
@@ -53,6 +62,21 @@ const actionItemSchema: ModelContextJsonSchema = {
   additionalProperties: false,
 };
 
+const actionPatchJsonSchema: ModelContextJsonSchema = {
+  type: "object",
+  properties: {
+    destinationZone: { type: "string", enum: ZONE_IDS },
+    destinationPosition: pointSchema,
+    targetPlayerId: { type: "string", enum: OFFENSE_IDS },
+    startSecond: { type: "number", minimum: 0 },
+    durationSecond: { type: "number", exclusiveMinimum: 0 },
+    pathStyle: { type: "string", enum: ["straight", "curve_left", "curve_right", "curl", "flare", "backdoor", "slip"] },
+    screenType: { type: "string", enum: ["pin_down", "flare", "back_screen", "ball_screen", "cross_screen"] },
+    label: { type: "string", maxLength: 60 },
+  },
+  additionalProperties: false,
+};
+
 export const GET_PLAY_STATE_INPUT_JSON_SCHEMA: ModelContextJsonSchema = {
   type: "object",
   properties: {
@@ -80,6 +104,17 @@ export const ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA: ModelContextJsonSchema = {
     },
   },
   required: ["actions"],
+  additionalProperties: false,
+};
+
+export const UPDATE_PLAY_ACTION_INPUT_JSON_SCHEMA: ModelContextJsonSchema = {
+  type: "object",
+  properties: {
+    actionId: { type: "string", description: "ID of the existing action to update." },
+    expectedRevision: { type: "integer", minimum: 0, description: "Current revision returned by get_play_state or the prior successful update." },
+    patch: actionPatchJsonSchema,
+  },
+  required: ["actionId", "patch"],
   additionalProperties: false,
 };
 

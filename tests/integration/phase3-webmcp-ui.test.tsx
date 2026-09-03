@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { playCommands } from "../../src/application/commands";
 import { createGoldenActionBatch } from "../../src/domain/presets";
+import { prepareCanonicalPhase5Repair } from "../helpers/phase5RepairFixture";
 import { playStore } from "../../src/state/playStore";
 import { App } from "../../src/App";
 import { createFakeModelContext, toolByName } from "../helpers/webMcpTestContext";
@@ -23,7 +24,7 @@ function renderedActionIds(prefix: "court-action" | "timeline-action"): string[]
     .sort();
 }
 
-describe("Phase 4 WebMCP rendered integration", () => {
+describe("WebMCP rendered integration", () => {
   beforeEach(() => {
     document.modelContext = undefined;
     expect(playCommands.resetDemo().ok).toBe(true);
@@ -48,18 +49,18 @@ describe("Phase 4 WebMCP rendered integration", () => {
     });
   });
 
-  it("shows availability only after all four site tools are registered, then preserves it across reset", async () => {
+  it("shows availability only after all five site tools are registered, then preserves it across reset", async () => {
     const browser = createFakeModelContext();
     document.modelContext = browser;
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("● Agent tools available · 4 site tools");
+      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("● Agent tools available · 5 site tools");
     });
     expect(screen.getByText("No WebMCP activity yet.")).toBeVisible();
     expect(screen.queryByText("WebMCP tools are not registered yet.")).not.toBeInTheDocument();
     expect(browser.registrations.map((registration) => registration.definition.name))
-      .toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play"]);
+      .toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play", "update_play_action"]);
     const revisionBeforeReset = playStore.getState().document.playRevision;
 
     act(() => {
@@ -73,31 +74,31 @@ describe("Phase 4 WebMCP rendered integration", () => {
     });
     expect(playStore.getState().session.webmcp).toEqual({
       available: true,
-      registeredToolNames: ["get_play_state", "add_play_actions", "validate_play", "animate_play"],
+      registeredToolNames: ["get_play_state", "add_play_actions", "validate_play", "animate_play", "update_play_action"],
     });
     expect(screen.getByTestId("webmcp-status")).toHaveTextContent("Agent tools available");
   });
 
-  it("cleans up the first React Strict Mode registration before accepting the remounted four-tool set", async () => {
+  it("cleans up the first React Strict Mode registration before accepting the remounted five-tool set", async () => {
     const browser = createFakeModelContext();
     document.modelContext = browser;
     render(<StrictMode><App /></StrictMode>);
 
     await waitFor(() => {
-      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("Agent tools available · 4 site tools");
+      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("Agent tools available · 5 site tools");
     });
     expect(browser.registrations.map((registration) => registration.definition.name))
-      .toEqual(["get_play_state", "get_play_state", "add_play_actions", "validate_play", "animate_play"]);
+      .toEqual(["get_play_state", "get_play_state", "add_play_actions", "validate_play", "animate_play", "update_play_action"]);
     expect(browser.registrations[0]?.options.signal.aborted).toBe(true);
     expect(playStore.getState().session.webmcp.registeredToolNames)
-      .toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play"]);
+      .toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play", "update_play_action"]);
   });
 
   it("renders the command-committed tool batch on matching court and timeline sets before success returns", async () => {
     const browser = createFakeModelContext();
     document.modelContext = browser;
     render(<App />);
-    await waitFor(() => expect(browser.registrations).toHaveLength(4));
+    await waitFor(() => expect(browser.registrations).toHaveLength(5));
     const revision = playStore.getState().document.playRevision;
 
     let result: AddResult | undefined;
@@ -117,5 +118,32 @@ describe("Phase 4 WebMCP rendered integration", () => {
     expect(playStore.getState().session.animation).toMatchObject({ status: "idle", currentSecond: 0 });
     expect(screen.getByText("AGENT")).toBeVisible();
     expect(screen.getByText("add actions")).toBeVisible();
+  });
+
+  it("renders the r5-to-r7 tool repair on the same locked court paths and timeline rows", async () => {
+    const browser = createFakeModelContext();
+    document.modelContext = browser;
+    render(<App />);
+    await waitFor(() => expect(browser.registrations).toHaveLength(5));
+
+    let repair!: ReturnType<typeof prepareCanonicalPhase5Repair>;
+    act(() => { repair = prepareCanonicalPhase5Repair(playCommands, playStore); });
+    expect(screen.getByTestId("court-action-A3")).toHaveClass("is-locked", "is-coach-modified");
+    expect(screen.getByTestId("timeline-action-A4")).toHaveAccessibleName(/locked/);
+
+    act(() => {
+      expect(toolByName(browser, "update_play_action").execute({ actionId: "A5", expectedRevision: repair.revision, patch: repair.repairPatches.A5 })).toMatchObject({ ok: true, revision: repair.revision + 1 });
+      expect(toolByName(browser, "update_play_action").execute({ actionId: "A6", expectedRevision: repair.revision + 1, patch: repair.repairPatches.A6 })).toMatchObject({ ok: true, revision: repair.revision + 2 });
+    });
+
+    expect(playStore.getState().document.playRevision).toBe(repair.revision + 2);
+    expect(playStore.getState().document.actions.find((action) => action.id === "A5")).toMatchObject({ startSecond: 1.35, durationSecond: 0.25, lastModifiedBy: "agent" });
+    expect(playStore.getState().document.actions.find((action) => action.id === "A6")).toMatchObject({ startSecond: 1.6, durationSecond: 0.35, lastModifiedBy: "agent" });
+    expect(renderedActionIds("court-action")).toEqual(ACTION_IDS);
+    expect(renderedActionIds("timeline-action")).toEqual(ACTION_IDS);
+    expect(screen.getByTestId("timeline-action-A5")).toHaveAccessibleName(/starts 1.35s, lasts 0.25s/);
+    expect(screen.getByTestId("timeline-action-A6")).toHaveAccessibleName(/starts 1.60s, lasts 0.35s/);
+    expect(screen.getByTestId("court-action-A3")).toHaveTextContent("▣ Pin-down");
+    expect(screen.getAllByText("preserve locked actions")).toHaveLength(2);
   });
 });

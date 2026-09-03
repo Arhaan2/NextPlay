@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { AgentPlaySnapshot } from "../application/agentSnapshot";
+import type { AgentActionSnapshot, AgentPlaySnapshot } from "../application/agentSnapshot";
 import type { CommandErrorCode, CommandResult } from "../application/commandResults";
 import type { ActionType, OffenseId, ValidationIssue } from "../domain/types";
 
@@ -75,6 +75,21 @@ export function commandFailureResult(
     message: result.message,
     ...(playInvalid === undefined ? {} : playInvalid),
     ...(result.details === undefined ? {} : { details: result.details }),
+  };
+}
+
+export interface UpdatePlayActionSuccess {
+  ok: true;
+  revision: number;
+  updated: AgentActionSnapshot;
+  changedFields: string[];
+  lockedActionsPreserved: string[];
+  validation: {
+    status: "not_run" | "complete";
+    valid?: boolean;
+    checksPassed?: number;
+    checksTotal?: number;
+    errors?: ToolValidationError[];
   };
 }
 

@@ -30,6 +30,8 @@ export interface TransactionOptions<TResult> {
   replaceWholeDocument?: boolean;
   summary: (data: TResult) => string;
   details?: (data: TResult) => unknown;
+  /** Runs only after the pre-existing locked-action snapshots have been verified. */
+  onLockedActionsPreserved?: (data: TResult, actionIds: string[]) => void;
   onCommitted?: () => void;
 }
 
@@ -105,7 +107,7 @@ export function executeContentTransaction<TResult>(
     if (expectedRevision !== undefined && expectedRevision !== before.playRevision) {
       throw new ExpectedCommandError(
         "STALE_PLAY_STATE",
-        "The play changed. Read the current play before editing.",
+        `The play changed after revision ${expectedRevision}. Read the current play again or use revision ${before.playRevision} before editing.`,
         { expectedRevision, currentRevision: before.playRevision },
       );
     }
@@ -120,6 +122,7 @@ export function executeContentTransaction<TResult>(
     const nextRevision = before.playRevision + 1;
     const data = mutate(draft, nextRevision);
     assertLockedActionsPreserved(snapshots, draft.actions);
+    options.onLockedActionsPreserved?.(data, [...snapshots.keys()]);
     assertStructuralInvariants(draft);
     draft.playRevision = nextRevision;
     store.getState().commitDocument(draft);

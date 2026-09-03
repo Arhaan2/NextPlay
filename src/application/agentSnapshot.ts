@@ -81,7 +81,7 @@ function snapshotEndSecond(action: PlayAction): number {
   return actionEndSecond(action);
 }
 
-function snapshotAction(action: PlayAction): AgentActionSnapshot {
+export function createAgentActionSnapshot(action: PlayAction): AgentActionSnapshot {
   const targetPlayerId = "targetPlayerId" in action ? action.targetPlayerId : undefined;
   const destinationZone = "destinationZone" in action ? action.destinationZone : undefined;
   const screenType = "screenType" in action ? action.screenType : undefined;
@@ -139,7 +139,7 @@ export function createAgentPlaySnapshot(
     ballOwnerId: document.ballOwnerId,
     players: document.players.map(snapshotPlayer),
     actions: includeActionDetails
-      ? document.actions.map(snapshotAction)
+      ? document.actions.map(createAgentActionSnapshot)
       : document.actions.map(compactAction),
     lockedActionIds,
     lockedActionCount: lockedActionIds.length,

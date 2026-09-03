@@ -1,17 +1,18 @@
 import { z } from "zod";
-import { createAgentPlaySnapshot } from "../application/agentSnapshot";
+import { createAgentActionSnapshot, createAgentPlaySnapshot } from "../application/agentSnapshot";
 import { playCommands, type PlayCommands } from "../application/commands";
-import type { PlayAction } from "../domain/types";
+import type { PlayAction, ValidationReport } from "../domain/types";
 import { playStore, type PlayStore } from "../state/playStore";
 import type { ModelContext, ModelContextToolDefinition } from "./modelContext";
-import { ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA, ANIMATE_PLAY_INPUT_JSON_SCHEMA, GET_PLAY_STATE_INPUT_JSON_SCHEMA, VALIDATE_PLAY_INPUT_JSON_SCHEMA, addPlayActionsInputSchema, animatePlayInputSchema, getPlayStateInputSchema, validatePlayInputSchema } from "./toolSchemas";
+import { ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA, ANIMATE_PLAY_INPUT_JSON_SCHEMA, GET_PLAY_STATE_INPUT_JSON_SCHEMA, UPDATE_PLAY_ACTION_INPUT_JSON_SCHEMA, VALIDATE_PLAY_INPUT_JSON_SCHEMA, addPlayActionsInputSchema, animatePlayInputSchema, getPlayStateInputSchema, updatePlayActionInputSchema, validatePlayInputSchema } from "./toolSchemas";
 import { WEBMCP_TOOL_NAMES } from "./toolNames";
-import { commandFailureResult, invalidInputResult, type AddPlayActionsSuccess, type AnimatePlaySuccess, type GetPlayStateSuccess, type ValidatePlaySuccess } from "./toolResults";
+import { commandFailureResult, invalidInputResult, type AddPlayActionsSuccess, type AnimatePlaySuccess, type GetPlayStateSuccess, type UpdatePlayActionSuccess, type ValidatePlaySuccess } from "./toolResults";
 import { appendWebMcpActivity } from "./tracing";
 const GET_DESCRIPTION = "Read the current NextPlay basketball play, including its revision, clock, starting positions, actions, coach locks, and validation summary. Call this before adding or adapting actions.";
 const ADD_DESCRIPTION = "Atomically add 1–12 timed move, dribble, screen, pass, or shot actions to the live play. Use the revision returned by get_play_state. Successful actions appear on the court and timeline.";
 const VALIDATE_DESCRIPTION = "Run deterministic execution checks on the current play for references, clock, same-player overlap, inbound pass, shot presence, and possession. Does not change saved play content.";
 const ANIMATE_DESCRIPTION = "Animate the current structurally valid play on the visible court. Uses saved actions without changing play content.";
+const UPDATE_DESCRIPTION = "Update the timing, destination, or other accepted editable fields of one existing unlocked play action. Read the current play first and pass its current revision. Coach-locked actions cannot be changed.";
 export interface WebMcpToolDependencies { store: PlayStore; commands: PlayCommands; }
 export interface WebMcpRegistrationDependencies extends Partial<WebMcpToolDependencies> { documentRef?: Document; }
 export interface WebMcpRegistration { supported: boolean; registration: Promise<void>; cleanup: () => void; }
@@ -21,12 +22,31 @@ function manual(store: PlayStore, registrationError?: string): void { store.getS
 function available(store: PlayStore): void { store.getState().updateSession((session) => ({ ...session, webmcp: { available: true, registeredToolNames: [...WEBMCP_TOOL_NAMES] } })); }
 function actionSummary(action: PlayAction): string { return "targetPlayerId" in action ? `${action.actorId} ${action.type} to ${action.targetPlayerId}` : "destinationZone" in action ? `${action.actorId} ${action.type} to ${action.destinationZone}` : `${action.actorId} ${action.type}`; }
 function invalid(commands: PlayCommands, store: PlayStore, operation: string, toolName: string, error: z.ZodError) { const result = invalidInputResult(revision(store), error); appendWebMcpActivity(commands, { operation, toolName, summary: "Tool input is invalid.", revision: result.revision, status: "failed", details: result.details }); return result; }
+function updateValidationSummary(validation: ValidationReport): UpdatePlayActionSuccess["validation"] {
+  if (validation.status === "not_run") return { status: "not_run" };
+  return {
+    status: "complete",
+    valid: validation.valid,
+    checksPassed: validation.checksPassed,
+    checksTotal: validation.checksTotal,
+    errors: validation.errors.slice(0, 4).map((issue) => ({ code: issue.code, ...(issue.actionId === undefined ? {} : { actionId: issue.actionId }), message: issue.message })),
+  };
+}
+function appendLockPreservationActivity(commands: PlayCommands, currentRevision: number, actionIds: string[]): void {
+  if (actionIds.length === 0) return;
+  commands.appendActivity({
+    actor: "system", channel: "webmcp", operation: "preserve_locked_actions", toolName: "update_play_action",
+    summary: "Preserved " + actionIds.length + " coach-locked action" + (actionIds.length === 1 ? "" : "s") + ": " + actionIds.join(", ") + ".",
+    revisionBefore: currentRevision, revisionAfter: currentRevision, status: "completed", details: { actionIds },
+  });
+}
 export function createWebMcpToolDefinitions({ store, commands }: WebMcpToolDependencies): ModelContextToolDefinition[] {
  const get: ModelContextToolDefinition = { name: "get_play_state", description: GET_DESCRIPTION, inputSchema: GET_PLAY_STATE_INPUT_JSON_SCHEMA, annotations: { readOnlyHint: true }, execute: (raw, options) => { aborted(options?.signal); const parsed = getPlayStateInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "get_play_state", "get_play_state", parsed.error); const state = store.getState(); const result: GetPlayStateSuccess = { ok: true, revision: state.document.playRevision, play: createAgentPlaySnapshot(state, parsed.data.includeActionDetails) }; appendWebMcpActivity(commands, { operation: "get_play_state", toolName: "get_play_state", summary: `Read the current play at revision ${result.revision}.`, revision: result.revision, status: "completed" }); return result; } };
  const add: ModelContextToolDefinition = { name: "add_play_actions", description: ADD_DESCRIPTION, inputSchema: ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA, execute: (raw, options) => { aborted(options?.signal); const parsed = addPlayActionsInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "add_actions", "add_play_actions", parsed.error); const command = commands.addActions(parsed.data, { actor: "agent", channel: "webmcp", toolName: "add_play_actions" }); if (!command.ok) return commandFailureResult(command); const document = store.getState().document; const added = command.data.actionIds.map((id) => { const action = document.actions.find((candidate) => candidate.id === id); if (!action) throw new Error(`Committed action ${id} is missing.`); return { id, type: action.type, actorId: action.actorId, summary: actionSummary(action) }; }); const result: AddPlayActionsSuccess = { ok: true, revision: command.revision, added, actionCount: document.actions.length, lockedActionsPreserved: document.actions.filter((action) => action.locked).length }; return result; } };
  const validate: ModelContextToolDefinition = { name: "validate_play", description: VALIDATE_DESCRIPTION, inputSchema: VALIDATE_PLAY_INPUT_JSON_SCHEMA, annotations: { readOnlyHint: true }, execute: (raw, options) => { aborted(options?.signal); const parsed = validatePlayInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "validate_play", "validate_play", parsed.error); const command = commands.runValidation({ actor: "agent", channel: "webmcp", toolName: "validate_play" }); if (!command.ok) return commandFailureResult(command); const report = command.data; const result: ValidatePlaySuccess = { ok: true, revision: command.revision, valid: report.valid, checksPassed: report.checksPassed, checksTotal: report.checksTotal, errors: report.errors, warnings: report.warnings }; return result; } };
  const animate: ModelContextToolDefinition = { name: "animate_play", description: ANIMATE_DESCRIPTION, inputSchema: ANIMATE_PLAY_INPUT_JSON_SCHEMA, execute: (raw, options) => { aborted(options?.signal); const parsed = animatePlayInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "animate_play", "animate_play", parsed.error); const command = commands.startAnimation(parsed.data, { actor: "agent", channel: "webmcp", toolName: "animate_play" }); if (!command.ok) return commandFailureResult(command); const result: AnimatePlaySuccess = { ok: true, revision: command.revision, ...command.data }; return result; } };
- return [get, add, validate, animate];
+ const update: ModelContextToolDefinition = { name: "update_play_action", description: UPDATE_DESCRIPTION, inputSchema: UPDATE_PLAY_ACTION_INPUT_JSON_SCHEMA, execute: (raw, options) => { aborted(options?.signal); const parsed = updatePlayActionInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "update_action", "update_play_action", parsed.error); const command = commands.updateAction(parsed.data, { actor: "agent", channel: "webmcp", toolName: "update_play_action" }); if (!command.ok) return commandFailureResult(command); const state = store.getState(); const action = state.document.actions.find((candidate) => candidate.id === command.data.actionId); if (!action) throw new Error("Committed action is missing."); const lockedActionsPreserved = command.data.lockedActionIdsPreserved; const result: UpdatePlayActionSuccess = { ok: true, revision: command.revision, updated: createAgentActionSnapshot(action), changedFields: Object.keys(parsed.data.patch), lockedActionsPreserved, validation: updateValidationSummary(state.session.validation) }; appendLockPreservationActivity(commands, command.revision, lockedActionsPreserved); return result; } };
+ return [get, add, validate, animate, update];
 }
 export function getModelContext(documentRef: Document): ModelContext | undefined { const candidate = documentRef.modelContext; return typeof candidate?.registerTool === "function" ? candidate : undefined; }
 export function registerWebMcpTools(dependencies: WebMcpRegistrationDependencies = {}): WebMcpRegistration { const store = dependencies.store ?? playStore; const commands = dependencies.commands ?? playCommands; const documentRef = dependencies.documentRef ?? document; const context = getModelContext(documentRef); const controller = new AbortController(); let active = true; const cleanup = () => { active = false; controller.abort(); manual(store); }; if (!context) { manual(store); return { supported: false, registration: Promise.resolve(), cleanup }; } manual(store); const registration = (async () => { try { for (const definition of createWebMcpToolDefinitions({ store, commands })) { if (controller.signal.aborted) return; await context.registerTool(definition, { signal: controller.signal }); } if (active && !controller.signal.aborted) available(store); } catch (error: unknown) { controller.abort(); if (active) manual(store, error instanceof Error ? error.message.slice(0, 160) : "Site-tool registration did not complete."); } })(); return { supported: true, registration, cleanup }; }

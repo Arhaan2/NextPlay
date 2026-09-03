@@ -103,7 +103,7 @@ export interface PlayCommands {
   resetDemo: (input?: ExpectedRevisionInput, identity?: CommandIdentity) => CommandResult<{ reset: true }>;
   setClock: (input: SetClockInput, identity?: CommandIdentity) => CommandResult<{ clockSeconds: number }>;
   addActions: (input: AddActionsInput | unknown[], identity?: CommandIdentity) => CommandResult<{ actionIds: string[] }>;
-  updateAction: (input: UpdateActionInput, identity?: CommandIdentity) => CommandResult<{ actionId: string }>;
+  updateAction: (input: UpdateActionInput, identity?: CommandIdentity) => CommandResult<{ actionId: string; lockedActionIdsPreserved: string[] }>;
   setActionLocked: (input: SetActionLockedInput, identity?: CommandIdentity) => CommandResult<{ actionId: string; locked: boolean }>;
   selectAction: (actionId?: string) => void;
   appendActivity: (event: Omit<ActivityEvent, "id" | "timestamp">) => ActivityEvent;
@@ -208,6 +208,9 @@ export function createPlayCommands(
         validateInput: () => { parsed = updateActionCommandSchema.parse(input); },
         summary: (data) => `Updated action ${data.actionId}.`,
         details: (data) => data,
+        onLockedActionsPreserved: (data, actionIds) => {
+          data.lockedActionIdsPreserved = actionIds;
+        },
       },
       (draft, nextRevision) => {
         const index = draft.actions.findIndex((action) => action.id === parsed.actionId);
@@ -233,7 +236,7 @@ export function createPlayCommands(
           createdAtRevision: current.createdAtRevision,
           updatedAtRevision: nextRevision,
         };
-        return { actionId: current.id };
+        return { actionId: current.id, lockedActionIdsPreserved: [] };
       },
       );
     },
