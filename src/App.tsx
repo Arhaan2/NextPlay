@@ -1,102 +1,87 @@
+import { useState } from "react";
+
+import { COACH_UI } from "./application/commandMetadata";
+import { playCommands } from "./application/commands";
+import type { CommandResult } from "./application/commandResults";
 import { DomainHarness } from "./dev/DomainHarness";
+import { usePlayStore } from "./state/playStore";
+import { selectActivity, selectDocument, selectSession } from "./state/selectors";
+import { ActivityRail } from "./ui/ActivityRail";
+import { ValidationPlaceholder } from "./ui/ValidationPlaceholder";
+import { Court } from "./ui/court/Court";
+import { ActionInspector } from "./ui/inspector/ActionInspector";
+import { ClockEditor } from "./ui/inspector/ClockEditor";
+import { CommandFeedback } from "./ui/inspector/CommandFeedback";
+import { Timeline } from "./ui/timeline/Timeline";
+
+interface Feedback {
+  tone: "success" | "error";
+  message: string;
+}
 
 export function App() {
+  const document = usePlayStore(selectDocument);
+  const session = usePlayStore(selectSession);
+  const activity = usePlayStore(selectActivity);
+  const [feedback, setFeedback] = useState<Feedback>();
+  const selectedAction = document.actions.find((action) => action.id === session.selectedActionId);
+
+  function handleResult<T>(result: CommandResult<T>): void {
+    if (result.ok) {
+      setFeedback({ tone: "success", message: `Saved at revision ${result.revision}.` });
+      return;
+    }
+    setFeedback({ tone: "error", message: `${result.code}: ${result.message}` });
+  }
+
+  function selectAction(actionId: string): void {
+    playCommands.selectAction(actionId);
+  }
+
+  function resetDemo(): void {
+    handleResult(playCommands.resetDemo({ expectedRevision: document.playRevision }, COACH_UI));
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">
-            NP
-          </span>
+          <span className="brand-mark" aria-hidden="true">NP</span>
           <div>
             <p className="eyebrow">Basketball tactics board</p>
             <h1>NextPlay</h1>
           </div>
         </div>
-
         <div className="topbar-actions">
-          <p className="status-pill" data-testid="webmcp-status">
-            <span aria-hidden="true">○</span> Manual mode
-          </p>
-          <button
-            className="secondary-button"
-            type="button"
-            disabled
-            title="Reset becomes available with the interactive play state."
-          >
-            Reset demo
-          </button>
+          <p className="status-pill" data-testid="webmcp-status"><span aria-hidden="true">○</span> Manual mode</p>
+          <button className="secondary-button" type="button" onClick={resetDemo}>Reset demo</button>
         </div>
       </header>
 
       <section className="play-meta" aria-label="Demo scenario summary">
-        <div>
-          <span>Scenario</span>
-          <strong>Sideline out of bounds</strong>
-        </div>
-        <div>
-          <span>Clock</span>
-          <strong>4.2 seconds</strong>
-        </div>
-        <div>
-          <span>Defense</span>
-          <strong>Man-to-man</strong>
-        </div>
-        <p className="phase-label">Foundation build</p>
+        <div><span>Scenario</span><strong>Sideline out of bounds</strong></div>
+        <div><span>Defense</span><strong>Man-to-man</strong></div>
+        <div><span>Clock</span><strong>{document.clockSeconds.toFixed(1)} seconds</strong></div>
+        <div><span>Revision</span><strong>r{document.playRevision}</strong></div>
+        <ClockEditor key={String(document.clockSeconds)} clockSeconds={document.clockSeconds} revision={document.playRevision} onResult={handleResult} />
+        <p className="phase-label">Court &amp; coach controls</p>
       </section>
 
       <section className="workspace" aria-label="Play workspace">
-        <div
-          className="court-placeholder"
-          role="img"
-          aria-label="Basketball court workspace placeholder"
-          data-testid="court-placeholder"
-        >
-          <div className="placeholder-copy">
-            <p className="eyebrow">Court workspace</p>
-            <h2>The board is ready for the first play.</h2>
-            <p>
-              Court rendering and structured actions arrive in the next build
-              phase.
-            </p>
-          </div>
-        </div>
-
+        <Court document={document} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
         <aside className="side-rail" aria-label="Agent and validation status">
-          <section>
-            <div className="panel-heading">
-              <h2>Agent activity</h2>
-              <span>0</span>
-            </div>
-            <p className="empty-state">WebMCP tools are not registered yet.</p>
-          </section>
-
-          <section>
-            <div className="panel-heading">
-              <h2>Play checks</h2>
-              <span>—</span>
-            </div>
-            <p className="empty-state">
-              Validation will appear after actions are added.
-            </p>
-          </section>
+          <ActionInspector key={selectedAction === undefined ? "empty" : `${selectedAction.id}-${selectedAction.updatedAtRevision}`} action={selectedAction} revision={document.playRevision} onResult={handleResult} />
+          <ActivityRail activity={activity} />
+          <ValidationPlaceholder />
+          <CommandFeedback feedback={feedback} />
         </aside>
       </section>
 
-      <section className="timeline-shell" aria-labelledby="timeline-title">
-        <div>
-          <p className="eyebrow">Player timeline</p>
-          <h2 id="timeline-title">No actions yet</h2>
-        </div>
-        <p>Timeline rows will stay aligned with the live court.</p>
-      </section>
+      <Timeline actions={document.actions} clockSeconds={document.clockSeconds} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
 
       <footer className="prompt-bar">
         <span>Example prompt</span>
-        <p>
-          “Read this SLOB setup, add the six-action right-corner sequence, then
-          validate it.”
-        </p>
+        <p>“Read this SLOB setup, add the six-action right-corner sequence, then validate it.”</p>
       </footer>
 
       {import.meta.env.DEV ? <DomainHarness /> : null}

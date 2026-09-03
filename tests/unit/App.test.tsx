@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { App } from "../../src/App";
 
-describe("App foundation", () => {
-  it("presents the NextPlay identity and court workspace", () => {
+describe("App shell", () => {
+  it("presents the NextPlay identity, accessible court, and honest manual state", () => {
     render(<App />);
 
     expect(
@@ -12,7 +12,7 @@ describe("App foundation", () => {
     ).toBeVisible();
     expect(
       screen.getByRole("img", {
-        name: "Basketball court workspace placeholder",
+        name: "Basketball court workspace",
       }),
     ).toBeVisible();
     expect(
@@ -23,7 +23,7 @@ describe("App foundation", () => {
     ).toBeVisible();
   });
 
-  it("keeps unavailable Phase 0 controls honest and accessible", () => {
+  it("keeps Phase 2 manual controls and status honest and accessible", () => {
     render(<App />);
 
     expect(screen.getByTestId("webmcp-status")).toHaveTextContent(
@@ -32,6 +32,7 @@ describe("App foundation", () => {
     expect(
       screen.getByText("WebMCP tools are not registered yet."),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Reset demo" })).toBeDisabled();
+    expect(screen.getByText("Validation has not been run yet.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Reset demo" })).toBeEnabled();
   });
 });

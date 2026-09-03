@@ -17,7 +17,7 @@ describe("NextPlay Phase 0 shell", () => {
     const workspace = screen.getByRole("region", { name: "Play workspace" });
     expect(
       within(workspace).getByRole("img", {
-        name: "Basketball court workspace placeholder",
+        name: "Basketball court workspace",
       }),
     ).toBeVisible();
 
@@ -31,9 +31,10 @@ describe("NextPlay Phase 0 shell", () => {
       within(statusRail).getByRole("heading", { name: "Play checks" }),
     ).toBeVisible();
 
-    expect(
-      screen.getByRole("region", { name: "No actions yet" }),
-    ).toBeVisible();
+    expect(screen.getByRole("region", { name: "No actions yet" })).toBeVisible();
+    for (const playerId of ["O1", "O2", "O3", "O4", "O5"]) {
+      expect(screen.getByTestId(`timeline-row-${playerId}`)).toBeVisible();
+    }
     expect(screen.getByText("Example prompt")).toBeVisible();
     expect(
       screen.getByText(/add the six-action right-corner sequence/),
