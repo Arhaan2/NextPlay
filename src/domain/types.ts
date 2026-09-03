@@ -139,11 +139,17 @@ export interface PlayDocument {
   actions: PlayAction[];
 }
 
-export interface ValidationReport {
-  status: "not_run" | "complete";
-  errors: unknown[];
-  warnings: unknown[];
+export const VALIDATION_CHECK_IDS = ["references", "clock", "player_overlap", "inbound_pass", "shot_present", "pass_possession", "shot_possession"] as const;
+export type ValidationCheckId = (typeof VALIDATION_CHECK_IDS)[number];
+export type ValidationCheckStatus = "passed" | "failed" | "not_applicable";
+export type ValidationErrorCode = "INVALID_ACTION_REFERENCE" | "CLOCK_OVERFLOW" | "PLAYER_ACTION_OVERLAP" | "MISSING_INBOUND_PASS" | "MISSING_SHOT" | "INVALID_PASS_POSSESSION" | "INVALID_SHOT_POSSESSION";
+export interface ValidationCheck { id: ValidationCheckId; label: string; status: ValidationCheckStatus; errorCount: number; }
+export interface ValidationIssue {
+  severity: "error" | "warning"; code: ValidationErrorCode; message: string; actionId?: string; relatedActionId?: string; playerId?: OffenseId; expectedOwnerId?: OffenseId; actualOwnerId?: OffenseId; startSecond?: number; endSecond?: number; clockSeconds?: number; overBySeconds?: number;
 }
+export type ValidationReport =
+  | { status: "not_run"; checks: []; checksPassed: 0; checksTotal: 0; errors: []; warnings: [] }
+  | { status: "complete"; validatedRevision: number; valid: boolean; checks: ValidationCheck[]; checksPassed: number; checksTotal: number; errors: ValidationIssue[]; warnings: ValidationIssue[]; };
 
 export interface AnimationSessionState {
   status: "idle" | "playing" | "paused";

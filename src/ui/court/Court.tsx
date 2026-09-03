@@ -1,23 +1,29 @@
 import { ActionPath } from "./ActionPath";
 import { CourtLines } from "./CourtLines";
 import { CourtPlayer } from "./CourtPlayer";
-import { getCourtPlayerDisplayPoint } from "../../engine/geometry/displayCoordinates";
-import type { PlayDocument } from "../../domain/types";
+import { getCourtPlayerDisplayPoint, toCourtDisplayPoint } from "../../engine/geometry/displayCoordinates";
+import { getBallStateAt } from "../../engine/animation/ballPosition";
+import { getPlayerPositionAt } from "../../engine/animation/playerPositions";
+import { stableSeconds } from "../../engine/time/seconds";
+import type { AnimationSessionState, PlayDocument } from "../../domain/types";
 
 interface CourtProps {
   document: PlayDocument;
+  animation: AnimationSessionState;
   selectedActionId?: string;
   onSelectAction: (actionId: string) => void;
 }
 
-export function Court({ document, selectedActionId, onSelectAction }: CourtProps) {
+export function Court({ document, animation, selectedActionId, onSelectAction }: CourtProps) {
+  const animated = animation.status !== "idle";
+  const ballState = animated ? getBallStateAt(document, animation.currentSecond) : undefined;
   const ballOwner = document.players.find((player) => player.id === document.ballOwnerId);
   const ballOwnerPosition = ballOwner === undefined
     ? undefined
     : getCourtPlayerDisplayPoint(document.players, ballOwner.id);
 
   return (
-    <section className="court-panel" aria-label="Basketball court workspace" data-testid="court">
+    <section className="court-panel" aria-label="Basketball court workspace" data-testid="court" data-animation-status={animation.status} data-animation-current-second={stableSeconds(animation.currentSecond)}>
       <svg
         className="court"
         viewBox="0 0 100 100"
@@ -49,17 +55,11 @@ export function Court({ document, selectedActionId, onSelectAction }: CourtProps
             <CourtPlayer
               key={player.id}
               player={player}
-              position={getCourtPlayerDisplayPoint(document.players, player.id)}
+              position={animated && player.team === "offense" ? toCourtDisplayPoint(getPlayerPositionAt(document, player.id, animation.currentSecond)) : getCourtPlayerDisplayPoint(document.players, player.id)}
             />
           ))}
         </g>
-        {ballOwner !== undefined && ballOwnerPosition !== undefined ? (
-          <g className="ball-marker" data-testid="ball-owner-indicator" role="img" aria-label={`Ball with ${document.ballOwnerId}`}>
-            <circle cx={ballOwnerPosition.x - 3.2} cy={ballOwnerPosition.y - 3.2} r="1.35" />
-            <path d={`M ${ballOwnerPosition.x - 4.45} ${ballOwnerPosition.y - 3.2} H ${ballOwnerPosition.x - 1.95}`} />
-            <path d={`M ${ballOwnerPosition.x - 3.2} ${ballOwnerPosition.y - 4.45} V ${ballOwnerPosition.y - 1.95}`} />
-          </g>
-        ) : null}
+        {ballOwner !== undefined && ballOwnerPosition !== undefined ? (() => { const position = ballState === undefined ? ballOwnerPosition : toCourtDisplayPoint(ballState.position); const label = ballState === undefined ? `Ball with ${document.ballOwnerId}` : ballState.ownerId === undefined ? `Ball ${ballState.phase}` : `Ball with ${ballState.ownerId}`; return <g className="ball-marker" data-testid="ball-owner-indicator" role="img" aria-label={label}><circle cx={position.x - 3.2} cy={position.y - 3.2} r="1.35" /><path d={`M ${position.x - 4.45} ${position.y - 3.2} H ${position.x - 1.95}`} /><path d={`M ${position.x - 3.2} ${position.y - 4.45} V ${position.y - 1.95}`} /></g>; })() : null}
       </svg>
       {document.actions.length === 0 ? (
         <div className="court-empty-state">

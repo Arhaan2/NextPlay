@@ -82,3 +82,10 @@ export const ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA: ModelContextJsonSchema = {
   required: ["actions"],
   additionalProperties: false,
 };
+
+export const validatePlayInputSchema = z.object({}).strict();
+export const animatePlayInputSchema = z.object({ speed: z.union([z.literal(0.5), z.literal(1), z.literal(1.5), z.literal(2)]).optional(), loop: z.boolean().optional() }).strict();
+export type ValidatePlayInput = z.infer<typeof validatePlayInputSchema>;
+export type AnimatePlayInput = z.infer<typeof animatePlayInputSchema>;
+export const VALIDATE_PLAY_INPUT_JSON_SCHEMA: ModelContextJsonSchema = { type: "object", properties: {}, additionalProperties: false };
+export const ANIMATE_PLAY_INPUT_JSON_SCHEMA: ModelContextJsonSchema = { type: "object", properties: { speed: { type: "number", enum: [0.5, 1, 1.5, 2], description: "Playback speed." }, loop: { type: "boolean", description: "Repeat the animation until paused." } }, additionalProperties: false };

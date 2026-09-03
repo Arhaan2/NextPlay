@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { COACH_UI } from "./application/commandMetadata";
 import { playCommands } from "./application/commands";
@@ -7,7 +7,8 @@ import { DomainHarness } from "./dev/DomainHarness";
 import { usePlayStore } from "./state/playStore";
 import { selectActivity, selectDocument, selectSession } from "./state/selectors";
 import { ActivityRail } from "./ui/ActivityRail";
-import { ValidationPlaceholder } from "./ui/ValidationPlaceholder";
+import { ValidationPanel } from "./ui/ValidationPanel";
+import { PlaybackControls } from "./ui/PlaybackControls";
 import { Court } from "./ui/court/Court";
 import { ActionInspector } from "./ui/inspector/ActionInspector";
 import { ClockEditor } from "./ui/inspector/ClockEditor";
@@ -22,6 +23,7 @@ interface Feedback {
 
 export function App() {
   useWebMcpTools();
+  useEffect(() => () => playCommands.stopAnimation(), []);
   const document = usePlayStore(selectDocument);
   const session = usePlayStore(selectSession);
   const activity = usePlayStore(selectActivity);
@@ -30,6 +32,8 @@ export function App() {
   const webMcpStatus = session.webmcp.available
     ? "Agent tools available"
     : "Manual mode";
+
+  function showMessage(tone: Feedback["tone"], message: string): void { setFeedback({ tone, message }); }
 
   function handleResult<T>(result: CommandResult<T>): void {
     if (result.ok) {
@@ -72,20 +76,20 @@ export function App() {
         <div><span>Clock</span><strong>{document.clockSeconds.toFixed(1)} seconds</strong></div>
         <div><span>Revision</span><strong>r{document.playRevision}</strong></div>
         <ClockEditor key={String(document.clockSeconds)} clockSeconds={document.clockSeconds} revision={document.playRevision} onResult={handleResult} />
-        <p className="phase-label">Court &amp; coach controls</p>
+        <PlaybackControls document={document} animation={session.animation} onMessage={showMessage} />
       </section>
 
       <section className="workspace" aria-label="Play workspace">
-        <Court document={document} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
+        <Court document={document} animation={session.animation} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
         <aside className="side-rail" aria-label="Agent and validation status">
           <ActionInspector key={selectedAction === undefined ? "empty" : `${selectedAction.id}-${selectedAction.updatedAtRevision}`} action={selectedAction} revision={document.playRevision} onResult={handleResult} />
           <ActivityRail activity={activity} webMcpAvailable={session.webmcp.available} />
-          <ValidationPlaceholder />
+          <ValidationPanel report={session.validation} onMessage={showMessage} />
           <CommandFeedback feedback={feedback} />
         </aside>
       </section>
 
-      <Timeline actions={document.actions} clockSeconds={document.clockSeconds} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
+      <Timeline actions={document.actions} clockSeconds={document.clockSeconds} currentSecond={session.animation.currentSecond} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
 
       <footer className="prompt-bar">
         <span>Example prompt</span>

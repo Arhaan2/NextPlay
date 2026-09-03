@@ -1,6 +1,8 @@
 import { getZonePoint } from "../../domain/zones";
 import type { PlayAction, PlayDocument, Point } from "../../domain/types";
 import { toCourtDisplayPoint, toCourtLabelDisplayPoint } from "./displayCoordinates";
+import { quadraticControlPoint } from "../animation/pathInterpolation";
+import { actionEndSecond } from "../time/seconds";
 
 export interface ScreenBarGeometry {
   from: Point;
@@ -16,7 +18,7 @@ export interface StaticActionGeometry {
 }
 
 function actionEnd(action: PlayAction): number {
-  return action.startSecond + action.durationSecond;
+  return actionEndSecond(action);
 }
 
 function actionPosition(action: PlayAction): Point | undefined {
@@ -29,23 +31,6 @@ function actionPosition(action: PlayAction): Point | undefined {
     case "shot":
       return undefined;
   }
-}
-
-function pathControlPoint(start: Point, end: Point, pathStyle: PlayAction["pathStyle"], isShot: boolean): Point | undefined {
-  const curved = isShot || pathStyle === "curve_left" || pathStyle === "curve_right" || pathStyle === "curl" || pathStyle === "flare" || pathStyle === "backdoor" || pathStyle === "slip";
-  if (!curved) {
-    return undefined;
-  }
-
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const direction = pathStyle === "curve_right" || pathStyle === "backdoor" ? -1 : 1;
-  const offset = isShot ? 10 : 6;
-  return {
-    x: (start.x + end.x) / 2 + ((-dy / length) * offset * direction),
-    y: (start.y + end.y) / 2 + ((dx / length) * offset * direction),
-  };
 }
 
 function labelPoint(start: Point, end: Point, control: Point | undefined): Point {
@@ -110,25 +95,26 @@ export function staticPlayerPosition(document: PlayDocument, playerId: string, b
 }
 
 export function getStaticActionGeometry(document: PlayDocument, action: PlayAction): StaticActionGeometry {
-  const start = toCourtDisplayPoint(staticPlayerPosition(document, action.actorId, action.startSecond));
-  let end: Point;
+  const rawStart = staticPlayerPosition(document, action.actorId, action.startSecond);
+  let rawEnd: Point;
 
   switch (action.type) {
     case "move":
     case "dribble":
     case "screen":
-      end = action.destinationPosition ?? getZonePoint(action.destinationZone);
+      rawEnd = action.destinationPosition ?? getZonePoint(action.destinationZone);
       break;
     case "pass":
-      end = staticPlayerPosition(document, action.targetPlayerId, actionEnd(action));
+      rawEnd = staticPlayerPosition(document, action.targetPlayerId, actionEnd(action));
       break;
     case "shot":
-      end = getZonePoint("rim");
+      rawEnd = getZonePoint("rim");
       break;
   }
 
-  end = toCourtDisplayPoint(end);
-  const rawControl = pathControlPoint(start, end, action.pathStyle, action.type === "shot");
+  const start = toCourtDisplayPoint(rawStart);
+  const end = toCourtDisplayPoint(rawEnd);
+  const rawControl = quadraticControlPoint(rawStart, rawEnd, action.pathStyle, action.type === "shot");
   const control = rawControl === undefined ? undefined : toCourtDisplayPoint(rawControl);
   const geometry: StaticActionGeometry = {
     start,

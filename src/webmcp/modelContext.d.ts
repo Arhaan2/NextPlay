@@ -5,7 +5,7 @@ export interface ModelContextJsonSchema {
   required?: string[];
   additionalProperties?: boolean;
   items?: ModelContextJsonSchema;
-  enum?: readonly string[];
+  enum?: readonly (string | number)[];
   minimum?: number;
   exclusiveMinimum?: number;
   maxLength?: number;

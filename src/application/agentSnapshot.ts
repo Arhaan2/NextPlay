@@ -8,6 +8,7 @@ import type {
   ScreenType,
   ZoneId,
 } from "../domain/types";
+import { actionEndSecond } from "../engine/time/seconds";
 
 export interface AgentPlayerSnapshot {
   id: Player["id"];
@@ -61,6 +62,7 @@ export interface AgentPlaySnapshot {
   lockedActionIds: string[];
   lockedActionCount: number;
   validationStatus: ApplicationState["session"]["validation"]["status"];
+  validation: ApplicationState["session"]["validation"];
 }
 
 function snapshotPlayer(player: Player): AgentPlayerSnapshot {
@@ -76,7 +78,7 @@ function snapshotPlayer(player: Player): AgentPlayerSnapshot {
 }
 
 function snapshotEndSecond(action: PlayAction): number {
-  return Number.parseFloat((action.startSecond + action.durationSecond).toPrecision(15));
+  return actionEndSecond(action);
 }
 
 function snapshotAction(action: PlayAction): AgentActionSnapshot {
@@ -142,5 +144,6 @@ export function createAgentPlaySnapshot(
     lockedActionIds,
     lockedActionCount: lockedActionIds.length,
     validationStatus: session.validation.status,
+    validation: structuredClone(session.validation),
   };
 }

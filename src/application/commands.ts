@@ -9,6 +9,9 @@ import { actionBatchSchema, parseActionInput, parseActionPatch, positiveClockSch
 import type { ActivityEvent, PlayAction, PlayActionInput, PlaySessionState } from "../domain/types";
 import { createInitialSessionState } from "../state/initialState";
 import { playStore, type PlayStore } from "../state/playStore";
+import { createSessionCommands, type StartAnimationInput } from "./sessionCommands";
+import { AnimationController, browserAnimationFrameScheduler } from "../engine/animation/animationController";
+import type { ValidationReport } from "../domain/types";
 
 export interface ExpectedRevisionInput {
   expectedRevision?: number;
@@ -105,12 +108,17 @@ export interface PlayCommands {
   selectAction: (actionId?: string) => void;
   appendActivity: (event: Omit<ActivityEvent, "id" | "timestamp">) => ActivityEvent;
   goldenActions: () => PlayActionInput[];
+  runValidation: (identity?: CommandIdentity) => CommandResult<Extract<ValidationReport, { status: "complete" }>>;
+  startAnimation: (input?: StartAnimationInput, identity?: CommandIdentity) => CommandResult<{ status: "playing"; durationSeconds: number; speed: 0.5 | 1 | 1.5 | 2; loop: boolean; validation: { valid: boolean; errors: number; warnings: number } }> ;
+  restartAnimation: (input?: StartAnimationInput, identity?: CommandIdentity) => CommandResult<{ status: "playing"; durationSeconds: number; speed: 0.5 | 1 | 1.5 | 2; loop: boolean; validation: { valid: boolean; errors: number; warnings: number } }> ;
+  pauseAnimation: () => void; resumeAnimation: () => void; setAnimationSpeed: (speed: 0.5 | 1 | 1.5 | 2) => void; setAnimationLoop: (loop: boolean) => void; stopAnimation: () => void;
 }
 
 export function createPlayCommands(
   store: PlayStore,
   dependencies: CommandDependencies = deterministicCommandDependencies,
 ): PlayCommands {
+  const sessionCommands = createSessionCommands(store, dependencies);
   return {
     loadDemoPreset: () => executeContentTransaction(
       store,
@@ -267,9 +275,19 @@ export function createPlayCommands(
     },
     appendActivity: (event) => appendActivityEvent(store, dependencies, event),
     goldenActions: createGoldenActionBatch,
+    runValidation: sessionCommands.runValidation,
+    startAnimation: sessionCommands.startAnimation,
+    restartAnimation: sessionCommands.restartAnimation,
+    pauseAnimation: sessionCommands.pauseAnimation,
+    resumeAnimation: sessionCommands.resumeAnimation,
+    setAnimationSpeed: sessionCommands.setAnimationSpeed,
+    setAnimationLoop: sessionCommands.setAnimationLoop,
+    stopAnimation: sessionCommands.stopAnimation,
   };
 }
 
-export const playCommands = createPlayCommands(playStore);
+const browserScheduler = browserAnimationFrameScheduler();
+const defaultAnimationController = browserScheduler === undefined ? undefined : new AnimationController(playStore, browserScheduler);
+export const playCommands = createPlayCommands(playStore, { ...deterministicCommandDependencies, animationController: defaultAnimationController });
 
 export const actionPatchInputSchema = z.object({ actionId: z.string().min(1), patch: z.unknown() }).strict();

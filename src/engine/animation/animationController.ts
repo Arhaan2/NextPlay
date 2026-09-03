@@ -1,0 +1,11 @@
+import type { PlayStore } from "../../state/playStore";
+import { getPlayDuration } from "./playerPositions";
+export interface AnimationFrameScheduler { now: () => number; requestFrame: (callback: FrameRequestCallback) => number; cancelFrame: (id: number) => void; }
+export function browserAnimationFrameScheduler(): AnimationFrameScheduler | undefined { if (typeof globalThis.requestAnimationFrame !== "function" || typeof globalThis.cancelAnimationFrame !== "function") return undefined; return { now: () => performance.now(), requestFrame: (callback) => globalThis.requestAnimationFrame(callback), cancelFrame: (id) => globalThis.cancelAnimationFrame(id) }; }
+export class AnimationController {
+  private frameId: number | undefined; private lastTimestamp: number | undefined;
+  public constructor(private readonly store: PlayStore, private readonly scheduler: AnimationFrameScheduler) {}
+  public start(resetElapsedTime = false): void { if (this.frameId !== undefined) { if (resetElapsedTime) this.lastTimestamp = this.scheduler.now(); return; } this.lastTimestamp = this.scheduler.now(); this.frameId = this.scheduler.requestFrame(this.advance); }
+  public cancel(): void { if (this.frameId !== undefined) this.scheduler.cancelFrame(this.frameId); this.frameId = undefined; this.lastTimestamp = undefined; }
+  private readonly advance: FrameRequestCallback = (timestamp) => { this.frameId = undefined; const state = this.store.getState(); const animation = state.session.animation; if (animation.status !== "playing") return; const duration = getPlayDuration(state.document); if (duration <= 0) { state.updateSession((session) => ({ ...session, animation: { ...session.animation, status: "idle", currentSecond: 0 } })); return; } const previous = this.lastTimestamp ?? timestamp; const elapsed = Math.max(0, (timestamp - previous) / 1000) * animation.speed; this.lastTimestamp = timestamp; let next = animation.currentSecond + elapsed; let status: "playing" | "paused" = "playing"; if (next >= duration) { if (animation.loop) next %= duration; else { next = duration; status = "paused"; } } state.updateSession((session) => ({ ...session, animation: { ...session.animation, status, currentSecond: next } })); if (status === "playing") this.frameId = this.scheduler.requestFrame(this.advance); };
+}

@@ -1,248 +1,32 @@
 import { z } from "zod";
-
 import { createAgentPlaySnapshot } from "../application/agentSnapshot";
 import { playCommands, type PlayCommands } from "../application/commands";
 import type { PlayAction } from "../domain/types";
 import { playStore, type PlayStore } from "../state/playStore";
 import type { ModelContext, ModelContextToolDefinition } from "./modelContext";
-import { ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA, GET_PLAY_STATE_INPUT_JSON_SCHEMA, addPlayActionsInputSchema, getPlayStateInputSchema } from "./toolSchemas";
-import { P0_WEBMCP_TOOL_NAMES } from "./toolNames";
-import { commandFailureResult, invalidInputResult, type AddPlayActionsSuccess, type GetPlayStateSuccess } from "./toolResults";
+import { ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA, ANIMATE_PLAY_INPUT_JSON_SCHEMA, GET_PLAY_STATE_INPUT_JSON_SCHEMA, VALIDATE_PLAY_INPUT_JSON_SCHEMA, addPlayActionsInputSchema, animatePlayInputSchema, getPlayStateInputSchema, validatePlayInputSchema } from "./toolSchemas";
+import { WEBMCP_TOOL_NAMES } from "./toolNames";
+import { commandFailureResult, invalidInputResult, type AddPlayActionsSuccess, type AnimatePlaySuccess, type GetPlayStateSuccess, type ValidatePlaySuccess } from "./toolResults";
 import { appendWebMcpActivity } from "./tracing";
-
-const GET_PLAY_STATE_DESCRIPTION = "Read the current NextPlay basketball play, including its revision, clock, starting positions, actions, and coach locks. Call this before adding or adapting actions.";
-const ADD_PLAY_ACTIONS_DESCRIPTION = "Atomically add 1–12 timed move, dribble, screen, pass, or shot actions to the live play. Use the revision returned by get_play_state. Successful actions appear on the court and timeline.";
-
-export interface WebMcpToolDependencies {
-  store: PlayStore;
-  commands: PlayCommands;
+const GET_DESCRIPTION = "Read the current NextPlay basketball play, including its revision, clock, starting positions, actions, coach locks, and validation summary. Call this before adding or adapting actions.";
+const ADD_DESCRIPTION = "Atomically add 1–12 timed move, dribble, screen, pass, or shot actions to the live play. Use the revision returned by get_play_state. Successful actions appear on the court and timeline.";
+const VALIDATE_DESCRIPTION = "Run deterministic execution checks on the current play for references, clock, same-player overlap, inbound pass, shot presence, and possession. Does not change saved play content.";
+const ANIMATE_DESCRIPTION = "Animate the current structurally valid play on the visible court. Uses saved actions without changing play content.";
+export interface WebMcpToolDependencies { store: PlayStore; commands: PlayCommands; }
+export interface WebMcpRegistrationDependencies extends Partial<WebMcpToolDependencies> { documentRef?: Document; }
+export interface WebMcpRegistration { supported: boolean; registration: Promise<void>; cleanup: () => void; }
+function aborted(signal?: AbortSignal): void { if (signal?.aborted) throw new DOMException("WebMCP tool execution was cancelled.", "AbortError"); }
+function revision(store: PlayStore): number { return store.getState().document.playRevision; }
+function manual(store: PlayStore, registrationError?: string): void { store.getState().updateSession((session) => ({ ...session, webmcp: { available: false, registeredToolNames: [], ...(registrationError === undefined ? {} : { registrationError }) } })); }
+function available(store: PlayStore): void { store.getState().updateSession((session) => ({ ...session, webmcp: { available: true, registeredToolNames: [...WEBMCP_TOOL_NAMES] } })); }
+function actionSummary(action: PlayAction): string { return "targetPlayerId" in action ? `${action.actorId} ${action.type} to ${action.targetPlayerId}` : "destinationZone" in action ? `${action.actorId} ${action.type} to ${action.destinationZone}` : `${action.actorId} ${action.type}`; }
+function invalid(commands: PlayCommands, store: PlayStore, operation: string, toolName: string, error: z.ZodError) { const result = invalidInputResult(revision(store), error); appendWebMcpActivity(commands, { operation, toolName, summary: "Tool input is invalid.", revision: result.revision, status: "failed", details: result.details }); return result; }
+export function createWebMcpToolDefinitions({ store, commands }: WebMcpToolDependencies): ModelContextToolDefinition[] {
+ const get: ModelContextToolDefinition = { name: "get_play_state", description: GET_DESCRIPTION, inputSchema: GET_PLAY_STATE_INPUT_JSON_SCHEMA, annotations: { readOnlyHint: true }, execute: (raw, options) => { aborted(options?.signal); const parsed = getPlayStateInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "get_play_state", "get_play_state", parsed.error); const state = store.getState(); const result: GetPlayStateSuccess = { ok: true, revision: state.document.playRevision, play: createAgentPlaySnapshot(state, parsed.data.includeActionDetails) }; appendWebMcpActivity(commands, { operation: "get_play_state", toolName: "get_play_state", summary: `Read the current play at revision ${result.revision}.`, revision: result.revision, status: "completed" }); return result; } };
+ const add: ModelContextToolDefinition = { name: "add_play_actions", description: ADD_DESCRIPTION, inputSchema: ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA, execute: (raw, options) => { aborted(options?.signal); const parsed = addPlayActionsInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "add_actions", "add_play_actions", parsed.error); const command = commands.addActions(parsed.data, { actor: "agent", channel: "webmcp", toolName: "add_play_actions" }); if (!command.ok) return commandFailureResult(command); const document = store.getState().document; const added = command.data.actionIds.map((id) => { const action = document.actions.find((candidate) => candidate.id === id); if (!action) throw new Error(`Committed action ${id} is missing.`); return { id, type: action.type, actorId: action.actorId, summary: actionSummary(action) }; }); const result: AddPlayActionsSuccess = { ok: true, revision: command.revision, added, actionCount: document.actions.length, lockedActionsPreserved: document.actions.filter((action) => action.locked).length }; return result; } };
+ const validate: ModelContextToolDefinition = { name: "validate_play", description: VALIDATE_DESCRIPTION, inputSchema: VALIDATE_PLAY_INPUT_JSON_SCHEMA, annotations: { readOnlyHint: true }, execute: (raw, options) => { aborted(options?.signal); const parsed = validatePlayInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "validate_play", "validate_play", parsed.error); const command = commands.runValidation({ actor: "agent", channel: "webmcp", toolName: "validate_play" }); if (!command.ok) return commandFailureResult(command); const report = command.data; const result: ValidatePlaySuccess = { ok: true, revision: command.revision, valid: report.valid, checksPassed: report.checksPassed, checksTotal: report.checksTotal, errors: report.errors, warnings: report.warnings }; return result; } };
+ const animate: ModelContextToolDefinition = { name: "animate_play", description: ANIMATE_DESCRIPTION, inputSchema: ANIMATE_PLAY_INPUT_JSON_SCHEMA, execute: (raw, options) => { aborted(options?.signal); const parsed = animatePlayInputSchema.safeParse(raw); if (!parsed.success) return invalid(commands, store, "animate_play", "animate_play", parsed.error); const command = commands.startAnimation(parsed.data, { actor: "agent", channel: "webmcp", toolName: "animate_play" }); if (!command.ok) return commandFailureResult(command); const result: AnimatePlaySuccess = { ok: true, revision: command.revision, ...command.data }; return result; } };
+ return [get, add, validate, animate];
 }
-
-export interface WebMcpRegistrationDependencies extends Partial<WebMcpToolDependencies> {
-  documentRef?: Document;
-}
-
-export interface WebMcpRegistration {
-  supported: boolean;
-  registration: Promise<void>;
-  cleanup: () => void;
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    throw new DOMException("WebMCP tool execution was cancelled.", "AbortError");
-  }
-}
-
-function actionSummary(action: PlayAction): string {
-  const subject = `${action.actorId} ${action.type}`;
-  const targetPlayerId = "targetPlayerId" in action ? action.targetPlayerId : undefined;
-  const destinationZone = "destinationZone" in action ? action.destinationZone : undefined;
-  if (targetPlayerId !== undefined) {
-    return `${subject} to ${targetPlayerId}`;
-  }
-  if (destinationZone !== undefined) {
-    return `${subject} to ${destinationZone}`;
-  }
-  return subject;
-}
-
-function currentRevision(store: PlayStore): number {
-  return store.getState().document.playRevision;
-}
-
-function setManualStatus(store: PlayStore, registrationError?: string): void {
-  store.getState().updateSession((session) => ({
-    ...session,
-    webmcp: {
-      available: false,
-      registeredToolNames: [],
-      ...(registrationError === undefined ? {} : { registrationError }),
-    },
-  }));
-}
-
-function setAvailableStatus(store: PlayStore): void {
-  store.getState().updateSession((session) => ({
-    ...session,
-    webmcp: {
-      available: true,
-      registeredToolNames: [...P0_WEBMCP_TOOL_NAMES],
-    },
-  }));
-}
-
-function registrationErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message.slice(0, 160);
-  }
-  return "Site-tool registration did not complete.";
-}
-
-export function createWebMcpToolDefinitions(
-  dependencies: WebMcpToolDependencies,
-): ModelContextToolDefinition[] {
-  const { store, commands } = dependencies;
-
-  const getPlayState: ModelContextToolDefinition = {
-    name: "get_play_state",
-    description: GET_PLAY_STATE_DESCRIPTION,
-    inputSchema: GET_PLAY_STATE_INPUT_JSON_SCHEMA,
-    annotations: { readOnlyHint: true },
-    execute: (rawInput, options) => {
-      throwIfAborted(options?.signal);
-      const parsed = getPlayStateInputSchema.safeParse(rawInput);
-      const revision = currentRevision(store);
-      if (!parsed.success) {
-        const result = invalidInputResult(revision, parsed.error);
-        appendWebMcpActivity(commands, {
-          operation: "get_play_state",
-          toolName: "get_play_state",
-          summary: "Could not read the play because the tool input was invalid.",
-          revision,
-          status: "failed",
-          details: result.details,
-        });
-        return result;
-      }
-
-      try {
-        const state = store.getState();
-        const result: GetPlayStateSuccess = {
-          ok: true,
-          revision: state.document.playRevision,
-          play: createAgentPlaySnapshot(state, parsed.data.includeActionDetails),
-        };
-        appendWebMcpActivity(commands, {
-          operation: "get_play_state",
-          toolName: "get_play_state",
-          summary: `Read the current play at revision ${result.revision}.`,
-          revision: result.revision,
-          status: "completed",
-        });
-        return result;
-      } catch (error: unknown) {
-        if (error instanceof z.ZodError) {
-          return invalidInputResult(revision, error);
-        }
-        appendWebMcpActivity(commands, {
-          operation: "get_play_state",
-          toolName: "get_play_state",
-          summary: "Could not read the current play.",
-          revision,
-          status: "failed",
-        });
-        throw error;
-      }
-    },
-  };
-
-  const addPlayActions: ModelContextToolDefinition = {
-    name: "add_play_actions",
-    description: ADD_PLAY_ACTIONS_DESCRIPTION,
-    inputSchema: ADD_PLAY_ACTIONS_INPUT_JSON_SCHEMA,
-    execute: (rawInput, options) => {
-      throwIfAborted(options?.signal);
-      const parsed = addPlayActionsInputSchema.safeParse(rawInput);
-      const revision = currentRevision(store);
-      if (!parsed.success) {
-        const result = invalidInputResult(revision, parsed.error);
-        appendWebMcpActivity(commands, {
-          operation: "add_actions",
-          toolName: "add_play_actions",
-          summary: "Could not add actions because the tool input was invalid.",
-          revision,
-          status: "failed",
-          details: result.details,
-        });
-        return result;
-      }
-
-      const commandResult = commands.addActions(
-        {
-          actions: parsed.data.actions,
-          ...(parsed.data.expectedRevision === undefined
-            ? {}
-            : { expectedRevision: parsed.data.expectedRevision }),
-        },
-        { actor: "agent", channel: "webmcp", toolName: "add_play_actions" },
-      );
-      if (!commandResult.ok) {
-        return commandFailureResult(commandResult);
-      }
-
-      const committedDocument = store.getState().document;
-      const added = commandResult.data.actionIds.map((id) => {
-        const action = committedDocument.actions.find((candidate) => candidate.id === id);
-        if (action === undefined) {
-          throw new Error(`Committed action ${id} is missing from the live play.`);
-        }
-        return { id: action.id, type: action.type, actorId: action.actorId, summary: actionSummary(action) };
-      });
-      const result: AddPlayActionsSuccess = {
-        ok: true,
-        revision: commandResult.revision,
-        added,
-        actionCount: committedDocument.actions.length,
-        lockedActionsPreserved: committedDocument.actions.filter((action) => action.locked).length,
-      };
-      return result;
-    },
-  };
-
-  return [getPlayState, addPlayActions];
-}
-
-export function getModelContext(documentRef: Document): ModelContext | undefined {
-  const candidate = documentRef.modelContext;
-  return typeof candidate?.registerTool === "function" ? candidate : undefined;
-}
-
-/**
- * Starts one complete, abortable registration attempt. Persistent play content is
- * never touched here; only the session's honest support status changes.
- */
-export function registerWebMcpTools(
-  dependencies: WebMcpRegistrationDependencies = {},
-): WebMcpRegistration {
-  const store = dependencies.store ?? playStore;
-  const commands = dependencies.commands ?? playCommands;
-  const documentRef = dependencies.documentRef ?? document;
-  const context = getModelContext(documentRef);
-  const controller = new AbortController();
-  let active = true;
-
-  const cleanup = (): void => {
-    active = false;
-    controller.abort();
-    setManualStatus(store);
-  };
-
-  if (context === undefined) {
-    setManualStatus(store);
-    return { supported: false, registration: Promise.resolve(), cleanup };
-  }
-
-  setManualStatus(store);
-  const definitions = createWebMcpToolDefinitions({ store, commands });
-  const registration = (async (): Promise<void> => {
-    try {
-      for (const definition of definitions) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        await context.registerTool(definition, { signal: controller.signal });
-      }
-      if (active && !controller.signal.aborted) {
-        setAvailableStatus(store);
-      }
-    } catch (error: unknown) {
-      controller.abort();
-      if (active) {
-        setManualStatus(store, registrationErrorMessage(error));
-      }
-    }
-  })();
-
-  return { supported: true, registration, cleanup };
-}
+export function getModelContext(documentRef: Document): ModelContext | undefined { const candidate = documentRef.modelContext; return typeof candidate?.registerTool === "function" ? candidate : undefined; }
+export function registerWebMcpTools(dependencies: WebMcpRegistrationDependencies = {}): WebMcpRegistration { const store = dependencies.store ?? playStore; const commands = dependencies.commands ?? playCommands; const documentRef = dependencies.documentRef ?? document; const context = getModelContext(documentRef); const controller = new AbortController(); let active = true; const cleanup = () => { active = false; controller.abort(); manual(store); }; if (!context) { manual(store); return { supported: false, registration: Promise.resolve(), cleanup }; } manual(store); const registration = (async () => { try { for (const definition of createWebMcpToolDefinitions({ store, commands })) { if (controller.signal.aborted) return; await context.registerTool(definition, { signal: controller.signal }); } if (active && !controller.signal.aborted) available(store); } catch (error: unknown) { controller.abort(); if (active) manual(store, error instanceof Error ? error.message.slice(0, 160) : "Site-tool registration did not complete."); } })(); return { supported: true, registration, cleanup }; }

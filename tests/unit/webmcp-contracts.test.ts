@@ -73,14 +73,14 @@ function execute<T>(
   return toolByName(context, name).execute(input) as T;
 }
 
-describe("Phase 3 WebMCP contracts", () => {
-  it("declares exactly the two closed P0 tools with the correct read annotation", () => {
+describe("Phase 4 WebMCP contracts", () => {
+  it("declares exactly the four closed P0 tools with the correct read annotations", () => {
     const context = createPlayTestContext();
     const definitions = createWebMcpToolDefinitions(context);
 
-    expect(P0_WEBMCP_TOOL_NAMES).toEqual(["get_play_state", "add_play_actions"]);
+    expect(P0_WEBMCP_TOOL_NAMES).toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play"]);
     expect(definitions.map((definition) => definition.name)).toEqual(P0_WEBMCP_TOOL_NAMES);
-    expect(definitions).toHaveLength(2);
+    expect(definitions).toHaveLength(4);
     expect(definitions[0]?.annotations).toEqual({ readOnlyHint: true });
     expect(definitions[1]?.annotations).toBeUndefined();
     expect(GET_PLAY_STATE_INPUT_JSON_SCHEMA).toMatchObject({
@@ -119,7 +119,7 @@ describe("Phase 3 WebMCP contracts", () => {
     });
   });
 
-  it("registers both tools with one signal, then becomes available only after both complete", async () => {
+  it("registers all four tools with one signal, then becomes available only after all complete", async () => {
     const context = createPlayTestContext();
     const browser = createFakeModelContext();
     const registration = registerWebMcpTools({
@@ -137,7 +137,7 @@ describe("Phase 3 WebMCP contracts", () => {
     expect(browser.registrations[0]?.options.signal.aborted).toBe(false);
     expect(context.store.getState().session.webmcp).toEqual({
       available: true,
-      registeredToolNames: ["get_play_state", "add_play_actions"],
+      registeredToolNames: ["get_play_state", "add_play_actions", "validate_play", "animate_play"],
     });
 
     registration.cleanup();
@@ -150,8 +150,8 @@ describe("Phase 3 WebMCP contracts", () => {
 
   it("aborts a partial registration and never accepts its first tool", async () => {
     const context = createPlayTestContext();
-    const browser = createFakeModelContext((tool) => tool.name === "add_play_actions"
-      ? Promise.reject(new Error("second registration failed"))
+    const browser = createFakeModelContext((tool) => tool.name === "animate_play"
+      ? Promise.reject(new Error("fourth registration failed"))
       : Promise.resolve());
     const registration = registerWebMcpTools({
       store: context.store,
@@ -167,7 +167,7 @@ describe("Phase 3 WebMCP contracts", () => {
     expect(context.store.getState().session.webmcp).toEqual({
       available: false,
       registeredToolNames: [],
-      registrationError: "second registration failed",
+      registrationError: "fourth registration failed",
     });
   });
 
@@ -190,11 +190,11 @@ describe("Phase 3 WebMCP contracts", () => {
     await first.registration;
 
     expect(browser.registrations.map((registrationItem) => registrationItem.definition.name))
-      .toEqual(["get_play_state", "get_play_state", "add_play_actions"]);
+      .toEqual(["get_play_state", "get_play_state", "add_play_actions", "validate_play", "animate_play"]);
     expect(browser.registrations[0]?.options.signal.aborted).toBe(true);
     expect(context.store.getState().session.webmcp).toEqual({
       available: true,
-      registeredToolNames: ["get_play_state", "add_play_actions"],
+      registeredToolNames: ["get_play_state", "add_play_actions", "validate_play", "animate_play"],
     });
     second.cleanup();
   });

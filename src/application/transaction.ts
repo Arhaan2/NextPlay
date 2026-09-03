@@ -6,10 +6,13 @@ import { assertLockedActionsPreserved, snapshotLockedActions, type LockedActionS
 import { StructuralInvariantError, assertStructuralInvariants } from "../domain/invariants";
 import type { ActivityEvent, PlayAction, PlayDocument } from "../domain/types";
 import type { PlayStore } from "../state/playStore";
+import { refreshSessionAfterContentMutation } from "./sessionCommands";
+import type { AnimationController } from "../engine/animation/animationController";
 
 export interface CommandDependencies {
   now: () => number;
   createActivityId: (sequence: number) => string;
+  animationController?: AnimationController;
 }
 
 export const deterministicCommandDependencies: CommandDependencies = {
@@ -120,6 +123,8 @@ export function executeContentTransaction<TResult>(
     assertStructuralInvariants(draft);
     draft.playRevision = nextRevision;
     store.getState().commitDocument(draft);
+    dependencies.animationController?.cancel();
+    refreshSessionAfterContentMutation(store);
     options.onCommitted?.();
     appendActivityEvent(store, dependencies, {
       actor: metadata.actor,

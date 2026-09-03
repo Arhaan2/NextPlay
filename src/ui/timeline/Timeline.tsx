@@ -6,6 +6,7 @@ import { OFFENSE_IDS, type PlayAction } from "../../domain/types";
 interface TimelineProps {
   actions: PlayAction[];
   clockSeconds: number;
+  currentSecond: number;
   selectedActionId?: string;
   onSelectAction: (actionId: string) => void;
 }
@@ -21,7 +22,7 @@ function actionKeyboardSelect(event: KeyboardEvent<HTMLButtonElement>, actionId:
   }
 }
 
-export function Timeline({ actions, clockSeconds, selectedActionId, onSelectAction }: TimelineProps) {
+export function Timeline({ actions, clockSeconds, currentSecond, selectedActionId, onSelectAction }: TimelineProps) {
   const timelineRange = Math.max(clockSeconds, ...actions.map((action) => action.startSecond + action.durationSecond), 0.1);
 
   return (
@@ -44,6 +45,7 @@ export function Timeline({ actions, clockSeconds, selectedActionId, onSelectActi
             <div className="timeline-row" key={playerId} data-testid={`timeline-row-${playerId}`}>
               <div className="timeline-row__label">{playerId}</div>
               <div className="timeline-row__track">
+                <span className="timeline-playhead" data-testid="timeline-playhead" aria-label={`Animation time ${formatSecond(currentSecond)}`} style={{ left: `${Math.min(100, (currentSecond / timelineRange) * 100)}%` }} />
                 <span className="timeline-row__boundary" aria-hidden="true" style={{ left: `${(clockSeconds / timelineRange) * 100}%` }} />
                 {playerActions.map((action) => {
                   const start = (action.startSecond / timelineRange) * 100;

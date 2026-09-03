@@ -244,7 +244,7 @@ describe("Phase 1 shared play commands", () => {
     store.getState().updateSession((session) => ({
       ...session,
       webmcp: { available: true, registeredToolNames: ["future_tool"] },
-      validation: { status: "complete", errors: ["stale"], warnings: ["stale"] },
+      validation: { status: "complete", validatedRevision: 1, valid: false, checks: [], checksPassed: 0, checksTotal: 0, errors: [], warnings: [] },
       animation: { status: "playing", currentSecond: 1, speed: 2, loop: true },
     }));
 

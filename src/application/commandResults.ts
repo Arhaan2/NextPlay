@@ -5,7 +5,8 @@ export type CommandErrorCode =
   | "ACTION_LOCKED"
   | "LOCK_VIOLATION"
   | "INVALID_ACTION_REFERENCE"
-  | "UNAUTHORIZED_LOCK_CHANGE";
+  | "UNAUTHORIZED_LOCK_CHANGE"
+  | "PLAY_INVALID";
 
 export interface ValidationCounts {
   errors: number;

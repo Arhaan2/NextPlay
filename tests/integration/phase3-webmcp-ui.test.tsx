@@ -23,7 +23,7 @@ function renderedActionIds(prefix: "court-action" | "timeline-action"): string[]
     .sort();
 }
 
-describe("Phase 3 WebMCP rendered integration", () => {
+describe("Phase 4 WebMCP rendered integration", () => {
   beforeEach(() => {
     document.modelContext = undefined;
     expect(playCommands.resetDemo().ok).toBe(true);
@@ -48,18 +48,18 @@ describe("Phase 3 WebMCP rendered integration", () => {
     });
   });
 
-  it("shows availability only after both site tools are registered, then preserves it across reset", async () => {
+  it("shows availability only after all four site tools are registered, then preserves it across reset", async () => {
     const browser = createFakeModelContext();
     document.modelContext = browser;
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("● Agent tools available · 2 site tools");
+      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("● Agent tools available · 4 site tools");
     });
     expect(screen.getByText("No WebMCP activity yet.")).toBeVisible();
     expect(screen.queryByText("WebMCP tools are not registered yet.")).not.toBeInTheDocument();
     expect(browser.registrations.map((registration) => registration.definition.name))
-      .toEqual(["get_play_state", "add_play_actions"]);
+      .toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play"]);
     const revisionBeforeReset = playStore.getState().document.playRevision;
 
     act(() => {
@@ -73,31 +73,31 @@ describe("Phase 3 WebMCP rendered integration", () => {
     });
     expect(playStore.getState().session.webmcp).toEqual({
       available: true,
-      registeredToolNames: ["get_play_state", "add_play_actions"],
+      registeredToolNames: ["get_play_state", "add_play_actions", "validate_play", "animate_play"],
     });
     expect(screen.getByTestId("webmcp-status")).toHaveTextContent("Agent tools available");
   });
 
-  it("cleans up the first React Strict Mode registration before accepting the remounted pair", async () => {
+  it("cleans up the first React Strict Mode registration before accepting the remounted four-tool set", async () => {
     const browser = createFakeModelContext();
     document.modelContext = browser;
     render(<StrictMode><App /></StrictMode>);
 
     await waitFor(() => {
-      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("Agent tools available · 2 site tools");
+      expect(screen.getByTestId("webmcp-status")).toHaveTextContent("Agent tools available · 4 site tools");
     });
     expect(browser.registrations.map((registration) => registration.definition.name))
-      .toEqual(["get_play_state", "get_play_state", "add_play_actions"]);
+      .toEqual(["get_play_state", "get_play_state", "add_play_actions", "validate_play", "animate_play"]);
     expect(browser.registrations[0]?.options.signal.aborted).toBe(true);
     expect(playStore.getState().session.webmcp.registeredToolNames)
-      .toEqual(["get_play_state", "add_play_actions"]);
+      .toEqual(["get_play_state", "add_play_actions", "validate_play", "animate_play"]);
   });
 
   it("renders the command-committed tool batch on matching court and timeline sets before success returns", async () => {
     const browser = createFakeModelContext();
     document.modelContext = browser;
     render(<App />);
-    await waitFor(() => expect(browser.registrations).toHaveLength(2));
+    await waitFor(() => expect(browser.registrations).toHaveLength(4));
     const revision = playStore.getState().document.playRevision;
 
     let result: AddResult | undefined;
