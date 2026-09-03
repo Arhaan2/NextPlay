@@ -155,6 +155,7 @@ export interface AnimationSessionState {
 export interface WebMcpSessionState {
   available: boolean;
   registeredToolNames: string[];
+  registrationError?: string;
 }
 
 export interface ActivityEvent {
@@ -163,6 +164,7 @@ export interface ActivityEvent {
   actor: Actor;
   channel: CommandChannel;
   operation: string;
+  toolName?: string;
   summary: string;
   revisionBefore: number;
   revisionAfter: number;

@@ -13,6 +13,7 @@ import { ActionInspector } from "./ui/inspector/ActionInspector";
 import { ClockEditor } from "./ui/inspector/ClockEditor";
 import { CommandFeedback } from "./ui/inspector/CommandFeedback";
 import { Timeline } from "./ui/timeline/Timeline";
+import { useWebMcpTools } from "./webmcp/useWebMcpTools";
 
 interface Feedback {
   tone: "success" | "error";
@@ -20,11 +21,15 @@ interface Feedback {
 }
 
 export function App() {
+  useWebMcpTools();
   const document = usePlayStore(selectDocument);
   const session = usePlayStore(selectSession);
   const activity = usePlayStore(selectActivity);
   const [feedback, setFeedback] = useState<Feedback>();
   const selectedAction = document.actions.find((action) => action.id === session.selectedActionId);
+  const webMcpStatus = session.webmcp.available
+    ? "Agent tools available"
+    : "Manual mode";
 
   function handleResult<T>(result: CommandResult<T>): void {
     if (result.ok) {
@@ -53,7 +58,10 @@ export function App() {
           </div>
         </div>
         <div className="topbar-actions">
-          <p className="status-pill" data-testid="webmcp-status"><span aria-hidden="true">○</span> Manual mode</p>
+          <p className="status-pill" data-testid="webmcp-status">
+            <span aria-hidden="true">{session.webmcp.available ? "●" : "○"}</span> {webMcpStatus}
+            {session.webmcp.available ? ` · ${session.webmcp.registeredToolNames.length} site tools` : ""}
+          </p>
           <button className="secondary-button" type="button" onClick={resetDemo}>Reset demo</button>
         </div>
       </header>
@@ -71,7 +79,7 @@ export function App() {
         <Court document={document} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
         <aside className="side-rail" aria-label="Agent and validation status">
           <ActionInspector key={selectedAction === undefined ? "empty" : `${selectedAction.id}-${selectedAction.updatedAtRevision}`} action={selectedAction} revision={document.playRevision} onResult={handleResult} />
-          <ActivityRail activity={activity} />
+          <ActivityRail activity={activity} webMcpAvailable={session.webmcp.available} />
           <ValidationPlaceholder />
           <CommandFeedback feedback={feedback} />
         </aside>
