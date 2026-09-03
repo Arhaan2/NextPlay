@@ -1,0 +1,24 @@
+Static production-bundle inspection recorded on 2026-09-03 at 14:54 PDT.
+
+Origin: https://next-play-lake.vercel.app
+Deployment: dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz
+Deployed feature commit: 97d4240788b798aeffed24ad2694fec8411eff63
+
+The cache-busted production page returned HTTP 200 and referenced
+`/assets/index-Bv24rYjS.js`. Static inspection of that deployed bundle found the
+intended tool-name constants in this order:
+
+1. get_play_state
+2. add_play_actions
+3. validate_play
+4. animate_play
+5. update_play_action
+
+No `lock_action` or `unlock_action` string was found. The deployed bundle also
+contains the pristine defaults `playRevision: 0`, `clockSeconds: 4.2`, and
+`actions: []`.
+
+Important limitation: this is a static deployed-bundle record, not a real
+page-scoped Site tools discovery record. The Browser skill's required control
+runtime was not exposed in this Codex session, so real discovery and Gate B were
+not executed.

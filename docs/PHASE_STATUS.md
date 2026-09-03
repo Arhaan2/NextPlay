@@ -1,10 +1,10 @@
 # Phase Status
 
-**Last updated:** September 2, 2026
-**Current phase:** Phase 3 — WebMCP Read/Add Vertical Slice
-**Overall status:** PHASE 3 ACCEPTED
+**Last updated:** September 3, 2026
+**Current phase:** Phase 5 — Human Lock and Agent Replan
+**Overall status:** AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED
 **Integration branch:** `main`
-**Known-good commit:** `590a2fcd00ce4ea5cd63aae69683428dbba4ed2b`
+**Known-good commit:** `97d4240788b798aeffed24ad2694fec8411eff63`
 **Known-good deployment:** https://next-play-lake.vercel.app
 **GitHub repository:** https://github.com/Arhaan2/NextPlay
 
@@ -16,8 +16,8 @@
 | 1. Domain/commands | PASS | `462928fa53b995641e90c5c6effa23eaaba3220a` | `npm ci`; `npm run verify` PASS (24 tests) | n/a | Test files are included in root static typechecking. DEV harness and production-preview smoke passed. |
 | 2. Court/timeline | PASS | `11fbb3e8a8c0a398632d1e500a3115d76f520f32` | `npm ci`; `npm run verify` PASS (38 tests) | PASS — 1280×720 local flow, production preview, and fresh public browser | Canonical A1–A6 fixture is rendered through the DEV-only command harness; acceptance screenshot: `artifacts/phase-2-coach-edit-1280x720.png`. |
 | 3. WebMCP read/add | PASS | `590a2fcd00ce4ea5cd63aae69683428dbba4ed2b` | `npm ci`; `npm run verify` PASS (53 tests) | PASS — real deployed Gate A, r0 → r1 | Exactly `get_play_state` and `add_play_actions`; evidence in `artifacts/phase-3/`. |
-| 4. Validation/animation | NOT STARTED | | | first flow | |
-| 5. Lock/replan | NOT STARTED | | | Gate B | |
+| 4. Validation/animation | AUTOMATED PASS — EXTERNAL FIRST FLOW PENDING | `4b68fc6163bf811f4f2d4fe50b490444ab5c643f` | `npm ci`; `npm run verify` PASS (74 tests across 13 files) | PENDING — deployed complete first flow | Phase 4 feature implementation and release review passed; acceptance history remains open until real deployed first-flow evidence exists. |
+| 5. Lock/replan | AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED | `97d4240788b798aeffed24ad2694fec8411eff63` | `npm run verify` PASS (78 tests across 14 files) | BLOCKED — required built-in browser control unavailable | Deployed as `dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz`; static production smoke passed; no Gate B claims fabricated. |
 | 6. Polish/freeze | NOT STARTED | | | video readability | |
 | 7. Release candidate | NOT STARTED | | | two full runs | |
 | 8. Final/submission | NOT STARTED | | | five full runs | |
@@ -30,20 +30,20 @@
 - [x] Vercel selected and production deployment verified.
 - [x] Codex project trusted and all five custom agents loaded.
 
-## Current phase acceptance
+## Phase 5 automated implementation evidence
 
-- [x] The top-level page registers exactly `get_play_state` and `add_play_actions`; unsupported browsers remain in honest manual mode.
-- [x] Registration is idempotent, React Strict Mode-safe, abortable on cleanup, and updates availability only after both tools register.
-- [x] Both tool inputs use closed JSON schemas and strict Zod parsing at the untrusted boundary; `get_play_state` has `readOnlyHint: true`.
-- [x] Both adapters use the shared command/session layers; no WebMCP handler mutates persistent Zustand document state directly.
-- [x] Read results expose current revision, preset, clock, players, actions, and locks; write results expose revision and changed action summaries.
-- [x] A valid batch is atomic, increments revision once, is visible before success returns, and records genuine AGENT/WebMCP activity without duplication.
-- [x] Automated contract and integration coverage passes: 7 files and 53 tests, plus lint, root typecheck, and a 146-module production build.
-- [x] Fresh deployed support detection reported `Agent tools available · 2 site tools`; source discovery listed only `get_play_state` and `add_play_actions`.
-- [x] Real deployed Gate A read the pristine SLOB at r0 and 4.2 seconds, then one write returned r1 and A1–A6.
-- [x] The deployed SVG court and O1–O5 timeline contained the identical A1–A6 set without reload; validation remained not run and animation remained idle.
-- [x] Activity showed completed `GET PLAY STATE` r0 → r0 and `ADD ACTIONS` r0 → r1 events; console errors were zero and no DEV harness was present.
-- [x] Gate A evidence is recorded in `artifacts/phase-3/GATE_A.md`, `artifacts/phase-3/available-site-tools.txt`, and the pristine/completed 1280×720 screenshots.
+- [x] Exactly five tools are implemented in the accepted order; `update_play_action` is the only new tool and no lock/unlock tool exists.
+- [x] The update adapter uses a closed JSON schema plus the accepted strict Zod action-patch schema and delegates to the shared command layer.
+- [x] Expected revisions are forwarded; automated coverage proves r5 → r6 → r7 and rejects reuse of r5 for the second update.
+- [x] Direct locked updates return `ACTION_LOCKED`; the transaction guard deeply preserves complete A3/A4 snapshots.
+- [x] Successful updates return the current committed action, new revision, current validation summary, and verified preserved lock IDs.
+- [x] Successful agent updates add concise SYSTEM preservation activity without another content revision or duplicate AGENT terminal event.
+- [x] Validation refresh and animation reset remain automatic after content mutation; final automated validation passes 7/7 and animation duration is 1.95 seconds.
+- [x] The five-tool registration remains all-or-nothing, one-signal, cleanup-safe, Strict Mode-safe, and honest on fifth-tool failure.
+- [x] Test runner passed typecheck, lint, 32 unit tests, 46 integration tests, 78 total tests, build, verify, and diff check.
+- [x] Release review returned PASS WITH NONBLOCKING NOTES.
+- [x] Feature commit `97d4240788b798aeffed24ad2694fec8411eff63` is pushed to `origin/main` and deployed Ready as `dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz`.
+- [ ] Real deployed Gate B remains required; evidence and the browser-control blocker are recorded in `artifacts/phase-5/GATE_B.md`.
 
 ## Decisions / deviations
 
@@ -59,32 +59,33 @@ Record any accepted departure from `docs/DESIGN.md` here with date, reason, impa
 | September 2, 2026 | The production `build` script typechecks app and Node projects; the separate `typecheck` and `verify` scripts still check the root project including tests. | Vercel correctly excludes tests via `.vercelignore`, so referencing `tsconfig.test.json` from the production build caused remote TS18003 despite a green local gate. | Remote production builds no longer depend on omitted test sources; the full 38-test/typecheck gate remains unchanged. |
 | September 2, 2026 | Agent snapshot `endSecond` values are normalized to 15 significant digits at serialization only. | Direct IEEE-754 addition exposed `0.9500000000000001` for A3, which is noisy and unsuitable for a concise agent read model. | Stored action timing, command behavior, and revision semantics remain unchanged; WebMCP snapshots return stable human-scale decimal values. |
 | September 2, 2026 | Gate A's tool-list artifact uses the built-in browser WebMCP source view plus the page's honest two-tool status instead of a browser-chrome screenshot. | Codex computer control intentionally denies access to the Codex app itself, so its Site tools popover cannot be captured programmatically. | Exact production tool names, origin, annotations, closed-schema properties, and count are preserved in the evidence; the real site-tool read/write and page screenshots remain independently recorded. |
+| September 3, 2026 | Phase 5 Gate B was not attempted through a substitute browser surface. | The Browser skill's required control runtime was unavailable in this session, and its instructions prohibit substituting standalone automation or Computer Use. | Automated implementation and deployment are complete, but Phase 5 and Phase 4's outstanding deployed complete-first-flow evidence remain unaccepted until a real built-in-browser Gate B run. |
 
 ## Active blockers
 
-None recorded.
+- The current Codex session does not expose the Browser skill's required browser-client JavaScript control runtime. Real deployed Gate B, screenshots, and console inspection could not be executed.
 
 ## Known risks
 
 - Vercel is not connected to GitHub for automatic deployments; releases require the CLI until the account connection is added.
 - Deadline allows no broad P1 work before both golden gates pass.
-- `update_play_action`, deterministic validation, and animation remain intentionally unavailable until their later phases.
+- Phase 5 is not accepted until real deployed Gate B proves the five-tool first flow, coach intervention, r5 → r6 → r7 agent repair, deep A3/A4 preservation, final validation, and animation.
 - Built-in browser chrome is not capturable through Codex computer control; future external-gate records should continue pairing source-view discovery with page-state screenshots.
 
 ## Exact next action
 
-Stop after Phase 3. Begin only Phase 4 — deterministic validation and animation.
+Re-run Phase 5 deployed Gate B from a fresh Codex desktop built-in browser context with Site tools enabled. Do not begin Phase 6 until Gate B passes and Phase 5 is accepted.
 
 ## Last phase handoff
 
 ```text
-Phase: Phase 3 — WebMCP Read/Add Vertical Slice
-Status: PASS
-Behavior delivered: Small top-level WebMCP surface; lifecycle-safe registration; honest support detection; concise agent snapshot; real read and atomic add adapters; visible-before-return state updates; genuine AGENT/WebMCP activity.
-Files changed: WebMCP declarations, names, closed schemas, results, tracing, registration, and React hook; agent snapshot; transaction/session/status integration; activity empty state; independent unit/integration contracts; Gate A evidence artifacts.
-Tests added: 15 Phase 3 tests; 53 total tests pass across 7 files (22 unit and 31 integration).
-Commands run and results: untouched `npm ci` PASS; untouched baseline `npm run verify` PASS (38 tests); final `git diff --check` PASS; `npm run typecheck`, `npm run lint`, `npm run test:unit` (22), `npm run test:integration` (31), `npm run test` (53), `npm run build` (146 modules), and repeated `npm run verify` all PASS; Vercel production build READY.
-Acceptance criteria demonstrated: Production discovery exposed exactly two tools; real `get_play_state` returned the live pristine r0 SLOB/4.2-second state; one `add_play_actions` call used expectedRevision 0 and returned r1/A1–A6; court/timeline ID parity and genuine activity were visible without reload; validation/animation remained untouched; console errors zero.
-Known risks / deferred work: Phase 4 validation/animation, Phase 5 update/locks/replan, direct dragging, persistence, and automatic GitHub deployment remain deferred. Browser-chrome evidence capture is unavailable to Codex automation, so the source-view tool record is paired with page screenshots.
-Recommended next phase: Phase 4 — deterministic validation and animation only.
+Phase: Phase 5 — Human Lock and Agent Replan
+Status: AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED
+Behavior delivered: One fifth update_play_action tool; strict accepted patch input; command-layer delegation; expected-revision chaining; current live snapshots; direct and indirect lock protection; verified lock-preservation results and SYSTEM activity; five-tool all-or-nothing lifecycle.
+Files changed: Eight production WebMCP/application files, four test/helper files, Phase 5 blocked-gate evidence, and this durable status record.
+Tests added: 4 tests net; 78 total tests pass across 14 files (32 unit and 46 integration).
+Commands run and results: untouched npm ci and npm run verify PASS (74 tests); final typecheck, lint, unit, integration, full test, build, verify, and diff check PASS (78 tests); Vercel production build READY.
+Acceptance criteria demonstrated: Automated/local integration proves r5 → r6 → r7, deep A3/A4 equality, 7/7 final validation, 1.95-second animation result, correct activity, and five-tool lifecycle. Static production smoke proves the deployment is live, pristine defaults remain, and the five intended tool names are present.
+Known risks / deferred work: A real built-in-browser Gate B was not executable in this session. Phase 4's outstanding deployed complete-first-flow evidence and Phase 5 acceptance remain open. No Phase 6 work started.
+Recommended next phase: Re-run Phase 5 deployed Gate B; only after PASS proceed to Phase 6 — demo polish and immediate feature freeze.
 ```
