@@ -1,0 +1,16 @@
+Captured from the production document's built-in-browser WebMCP source view
+on 2026-09-02 at 20:23 PDT.
+
+Origin: https://next-play-lake.vercel.app
+Discovered tool count: 2
+
+1. get_play_state
+   annotations.readOnlyHint: true
+   inputSchema.additionalProperties: false
+
+2. add_play_actions
+   inputSchema.additionalProperties: false
+   inputSchema.properties.actions.items.additionalProperties: false
+
+No other site tools were present. In particular, update_play_action,
+validate_play, and animate_play were not registered.
