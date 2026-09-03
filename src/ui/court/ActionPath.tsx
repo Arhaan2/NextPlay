@@ -34,7 +34,7 @@ export function ActionPath({ action, document, selected, onSelect }: ActionPathP
       data-action-id={action.id}
       role="button"
       tabIndex={0}
-      aria-label={`${action.id}: ${actionLabel(action)}. Select action.`}
+      aria-label={`${action.id}: ${actionLabel(action)}${action.locked ? ". Coach locked." : ""} Select action.`}
       aria-pressed={selected}
       onClick={() => onSelect(action.id)}
       onKeyDown={(event) => selectWithKeyboard(event, action.id, onSelect)}

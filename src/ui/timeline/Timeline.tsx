@@ -60,7 +60,7 @@ export function Timeline({ actions, clockSeconds, currentSecond, selectedActionI
                       type="button"
                       style={{ left: `${start}%`, width: `${Math.max(width, 5)}%` }}
                       aria-pressed={selected}
-                      aria-label={`${action.id}, ${actionLabel(action)}, starts ${formatSecond(action.startSecond)}, lasts ${formatSecond(action.durationSecond)}${action.locked ? ", locked" : ""}`}
+                      aria-label={`${action.id}, ${actionLabel(action)}, starts ${formatSecond(action.startSecond)}, lasts ${formatSecond(action.durationSecond)}${action.locked ? ", coach locked" : ""}`}
                       onClick={() => onSelectAction(action.id)}
                       onKeyDown={(event) => actionKeyboardSelect(event, action.id, onSelectAction)}
                     >
@@ -74,7 +74,7 @@ export function Timeline({ actions, clockSeconds, currentSecond, selectedActionI
           );
         })}
       </div>
-      {actions.length === 0 ? <p className="timeline-empty-copy">Timeline rows stay aligned with the live court.</p> : null}
+      {actions.length === 0 ? <p className="timeline-empty-copy">Actions will appear here after the coach or agent adds them.</p> : null}
     </section>
   );
 }

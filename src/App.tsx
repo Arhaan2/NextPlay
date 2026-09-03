@@ -14,6 +14,7 @@ import { ActionInspector } from "./ui/inspector/ActionInspector";
 import { ClockEditor } from "./ui/inspector/ClockEditor";
 import { CommandFeedback } from "./ui/inspector/CommandFeedback";
 import { Timeline } from "./ui/timeline/Timeline";
+import { DemoPrompts } from "./ui/DemoPrompts";
 import { useWebMcpTools } from "./webmcp/useWebMcpTools";
 
 interface Feedback {
@@ -62,9 +63,9 @@ export function App() {
           </div>
         </div>
         <div className="topbar-actions">
-          <p className="status-pill" data-testid="webmcp-status">
+          <p className={`status-pill status-pill--${session.webmcp.available ? "available" : "manual"}`} data-testid="webmcp-status" role="status" aria-live="polite">
             <span aria-hidden="true">{session.webmcp.available ? "●" : "○"}</span> {webMcpStatus}
-            {session.webmcp.available ? ` · ${session.webmcp.registeredToolNames.length} site tools` : ""}
+            {session.webmcp.available ? ` · ${session.webmcp.registeredToolNames.length} site tools` : <small>Site tools are unavailable in this browser.</small>}
           </p>
           <button className="secondary-button" type="button" onClick={resetDemo}>Reset demo</button>
         </div>
@@ -80,21 +81,18 @@ export function App() {
       </section>
 
       <section className="workspace" aria-label="Play workspace">
-        <Court document={document} animation={session.animation} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
-        <aside className="side-rail" aria-label="Agent and validation status">
+        <Court document={document} animation={session.animation} selectedActionId={session.selectedActionId} webMcpAvailable={session.webmcp.available} onSelectAction={selectAction} />
+        <aside className={`side-rail${selectedAction === undefined ? "" : " side-rail--action-selected"}`} aria-label="Agent and validation status">
           <ActionInspector key={selectedAction === undefined ? "empty" : `${selectedAction.id}-${selectedAction.updatedAtRevision}`} action={selectedAction} revision={document.playRevision} onResult={handleResult} />
-          <ActivityRail activity={activity} webMcpAvailable={session.webmcp.available} />
           <ValidationPanel report={session.validation} onMessage={showMessage} />
+          <ActivityRail activity={activity} webMcpAvailable={session.webmcp.available} />
           <CommandFeedback feedback={feedback} />
         </aside>
       </section>
 
       <Timeline actions={document.actions} clockSeconds={document.clockSeconds} currentSecond={session.animation.currentSecond} selectedActionId={session.selectedActionId} onSelectAction={selectAction} />
 
-      <footer className="prompt-bar">
-        <span>Example prompt</span>
-        <p>“Read this SLOB setup, add the six-action right-corner sequence, then validate it.”</p>
-      </footer>
+      <DemoPrompts />
 
       {import.meta.env.DEV ? <DomainHarness /> : null}
     </main>

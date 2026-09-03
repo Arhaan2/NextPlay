@@ -18,7 +18,7 @@ describe("App shell", () => {
     expect(
       screen.getByRole("heading", {
         level: 2,
-        name: "The board is ready for the first play.",
+        name: "SLOB formation loaded",
       }),
     ).toBeVisible();
   });

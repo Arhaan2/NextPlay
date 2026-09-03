@@ -11,10 +11,11 @@ interface CourtProps {
   document: PlayDocument;
   animation: AnimationSessionState;
   selectedActionId?: string;
+  webMcpAvailable?: boolean;
   onSelectAction: (actionId: string) => void;
 }
 
-export function Court({ document, animation, selectedActionId, onSelectAction }: CourtProps) {
+export function Court({ document, animation, selectedActionId, webMcpAvailable = false, onSelectAction }: CourtProps) {
   const animated = animation.status !== "idle";
   const ballState = animated ? getBallStateAt(document, animation.currentSecond) : undefined;
   const ballOwner = document.players.find((player) => player.id === document.ballOwnerId);
@@ -64,8 +65,9 @@ export function Court({ document, animation, selectedActionId, onSelectAction }:
       {document.actions.length === 0 ? (
         <div className="court-empty-state">
           <p className="eyebrow">Court workspace</p>
-          <h2>The board is ready for the first play.</h2>
-          <p>Load the canonical sequence in development, or use the coach controls once an action is available.</p>
+          <h2>SLOB formation loaded</h2>
+          <p>Ask your agent to design the play, or use the coach controls manually.</p>
+          {webMcpAvailable ? null : <p className="court-empty-state__manual-note">Site tools are unavailable in this browser; coach controls remain available.</p>}
         </div>
       ) : null}
     </section>

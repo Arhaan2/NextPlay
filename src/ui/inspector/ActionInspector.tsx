@@ -88,10 +88,11 @@ export function ActionInspector({ action, revision, onResult }: ActionInspectorP
         <div><dt>Screen</dt><dd>{"screenType" in selectedAction ? present(selectedAction.screenType) : "—"}</dd></div>
         <div><dt>Path</dt><dd>{present(selectedAction.pathStyle)}</dd></div>
         <div><dt>End</dt><dd>{(selectedAction.startSecond + selectedAction.durationSecond).toFixed(2)}s</dd></div>
-        <div><dt>Lock</dt><dd>{selectedAction.locked ? `Locked by ${selectedAction.lockOwner}` : "Unlocked"}</dd></div>
+        <div><dt>Lock</dt><dd>{selectedAction.locked ? "🔒 Coach locked" : "Unlocked"}</dd></div>
         <div><dt>Created</dt><dd>{selectedAction.createdBy}</dd></div>
         <div><dt>Modified</dt><dd>{selectedAction.lastModifiedBy} · r{selectedAction.updatedAtRevision}</dd></div>
       </dl>
+      {selectedAction.locked ? <p className="lock-notice" role="status">Coach locked — tactical fields are protected from agent edits.</p> : null}
       <form className="inspector-form" onSubmit={apply} noValidate>
         <label>Start second<input type="number" step="0.01" min="0" value={actionDraft.startSecond} disabled={selectedAction.locked} onChange={(event) => updateDraft("startSecond", event.target.value)} /></label>
         <label>Duration second<input type="number" step="0.01" min="0.01" value={actionDraft.durationSecond} disabled={selectedAction.locked} onChange={(event) => updateDraft("durationSecond", event.target.value)} /></label>

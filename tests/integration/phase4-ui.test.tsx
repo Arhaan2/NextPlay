@@ -25,7 +25,7 @@ describe("Phase 4 validation and playback UI", () => {
     const revision = playStore.getState().document.playRevision;
     await user.click(screen.getByRole("button", { name: "Run checks" }));
     expect(screen.getByText("7/7 execution checks passed")).toBeVisible();
-    expect(screen.getByText(new RegExp("^Validated at r" + revision + "$"))).toBeVisible();
+    expect(screen.getByText(new RegExp("^Validated at revision " + revision + "$"))).toBeVisible();
     expect(screen.getByText("0 errors")).toBeVisible();
     expect(playStore.getState().document.playRevision).toBe(revision);
   });

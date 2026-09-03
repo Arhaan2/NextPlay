@@ -120,7 +120,7 @@ describe("Phase 2 coach workspace", () => {
   it("places the zero-action empty-state card in bottom backcourt space instead of centering it over preset markers", () => {
     render(<App />);
     const court = screen.getByTestId("court");
-    const emptyState = screen.getByRole("heading", { name: "The board is ready for the first play." }).closest("div");
+    const emptyState = screen.getByRole("heading", { name: "SLOB formation loaded" }).closest("div");
     if (emptyState === null) {
       throw new Error("The zero-action court card is missing.");
     }
