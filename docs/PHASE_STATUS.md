@@ -1,10 +1,10 @@
 # Phase Status
 
 **Last updated:** September 3, 2026
-**Current phase:** Phase 5 — Human Lock and Agent Replan
-**Overall status:** AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED
+**Current phase:** Phase 6 — Demo Polish and Feature Freeze
+**Overall status:** AUTOMATED POLISH PASS — MANUAL VISUAL ACCEPTANCE BLOCKED; EXTERNAL PHASE 4/5 GATES STILL PENDING
 **Integration branch:** `main`
-**Known-good commit:** `97d4240788b798aeffed24ad2694fec8411eff63`
+**Known-good commit:** `41814991f1b2d5132fae67c162cda08a16a93bac`
 **Known-good deployment:** https://next-play-lake.vercel.app
 **GitHub repository:** https://github.com/Arhaan2/NextPlay
 
@@ -18,7 +18,7 @@
 | 3. WebMCP read/add | PASS | `590a2fcd00ce4ea5cd63aae69683428dbba4ed2b` | `npm ci`; `npm run verify` PASS (53 tests) | PASS — real deployed Gate A, r0 → r1 | Exactly `get_play_state` and `add_play_actions`; evidence in `artifacts/phase-3/`. |
 | 4. Validation/animation | AUTOMATED PASS — EXTERNAL FIRST FLOW PENDING | `4b68fc6163bf811f4f2d4fe50b490444ab5c643f` | `npm ci`; `npm run verify` PASS (74 tests across 13 files) | PENDING — deployed complete first flow | Phase 4 feature implementation and release review passed; acceptance history remains open until real deployed first-flow evidence exists. |
 | 5. Lock/replan | AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED | `97d4240788b798aeffed24ad2694fec8411eff63` | `npm run verify` PASS (78 tests across 14 files) | BLOCKED — required built-in browser control unavailable | Deployed as `dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz`; static production smoke passed; no Gate B claims fabricated. |
-| 6. Polish/freeze | NOT STARTED | | | video readability | |
+| 6. Polish/freeze | AUTOMATED POLISH PASS — MANUAL VISUAL ACCEPTANCE BLOCKED | `41814991f1b2d5132fae67c162cda08a16a93bac` | `npm run verify` PASS (86 tests across 15 files) | BLOCKED — required built-in browser-control runtime unavailable | UI-only polish is deployed as `dpl_yx74y3fxaySjh3BfzitxRcdfbSLA`; feature freeze is active; Phase 4/5 external gates remain pending. |
 | 7. Release candidate | NOT STARTED | | | two full runs | |
 | 8. Final/submission | NOT STARTED | | | five full runs | |
 
@@ -45,6 +45,45 @@
 - [x] Feature commit `97d4240788b798aeffed24ad2694fec8411eff63` is pushed to `origin/main` and deployed Ready as `dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz`.
 - [ ] Real deployed Gate B remains required; evidence and the browser-control blocker are recorded in `artifacts/phase-5/GATE_B.md`.
 
+## Phase 6 implementation and freeze evidence
+
+- [x] Phase 6 production changes are limited to UI presentation: 1280×720-oriented containment, status and empty-state copy, state-derived lock emphasis, actor clarity, expandable activity detail, validation formatting, playback status, exact demo prompts, focus treatment, and reduced-motion support.
+- [x] Exactly five site tools remain, in this frozen order: `get_play_state`, `add_play_actions`, `validate_play`, `animate_play`, `update_play_action`.
+- [x] No tool schema, command path, domain rule, validation calculation, animation timing, persistence behavior, or lock/revision behavior changed; no lock/unlock tool exists.
+- [x] Independent coverage added 8 Phase 6 integration tests; 32 unit and 54 integration tests pass, for 86 total tests across 15 files.
+- [x] The read-only test runner passed typecheck, zero-warning lint, unit, integration, all tests, production build, full verify, and diff check.
+- [x] Release review returned `PASS WITH NONBLOCKING NOTES`; it reported no horizontal overflow or hidden required content, plus a nonblocking 19px document-height overflow at 1280×720 to re-check before recording.
+- [x] Feature commit `41814991f1b2d5132fae67c162cda08a16a93bac` is pushed to `origin/main` and deployed Ready as `dpl_yx74y3fxaySjh3BfzitxRcdfbSLA` at https://next-play-lake.vercel.app.
+- [x] HTTPS returns 200; the deployed bundle contains the Phase 6 pristine/manual/prompt presentation and excludes the DEV command harness.
+- [ ] Primary manual visual acceptance and required screenshots were not fabricated: the Browser skill was present, but its required browser-control runtime was not exposed in this session.
+- [ ] Phase 4's deployed complete-first-flow evidence and Phase 5 Gate B remain pending; neither phase is marked accepted by Phase 6 work or deployment smoke.
+
+## Feature freeze
+
+Feature freeze is active as of Phase 6 feature commit `41814991f1b2d5132fae67c162cda08a16a93bac`.
+
+Post-freeze changes are limited to:
+
+- P0 correctness fixes
+- external Gate A/B fixes
+- severe visual defects
+- deployment blockers
+- test or environment reliability fixes
+- submission documentation and evidence
+
+The freeze forbids:
+
+- new tools or changed tool schemas
+- new action types or scenarios
+- direct dragging
+- persistence, export, or share links
+- backend, authentication, or accounts
+- broad refactors
+- advanced basketball intelligence
+- redesign of accepted architecture
+
+The frozen tool surface is exactly `get_play_state`, `add_play_actions`, `validate_play`, `animate_play`, and `update_play_action`.
+
 ## Decisions / deviations
 
 Record any accepted departure from `docs/DESIGN.md` here with date, reason, impact, and approving orchestrator.
@@ -60,10 +99,14 @@ Record any accepted departure from `docs/DESIGN.md` here with date, reason, impa
 | September 2, 2026 | Agent snapshot `endSecond` values are normalized to 15 significant digits at serialization only. | Direct IEEE-754 addition exposed `0.9500000000000001` for A3, which is noisy and unsuitable for a concise agent read model. | Stored action timing, command behavior, and revision semantics remain unchanged; WebMCP snapshots return stable human-scale decimal values. |
 | September 2, 2026 | Gate A's tool-list artifact uses the built-in browser WebMCP source view plus the page's honest two-tool status instead of a browser-chrome screenshot. | Codex computer control intentionally denies access to the Codex app itself, so its Site tools popover cannot be captured programmatically. | Exact production tool names, origin, annotations, closed-schema properties, and count are preserved in the evidence; the real site-tool read/write and page screenshots remain independently recorded. |
 | September 3, 2026 | Phase 5 Gate B was not attempted through a substitute browser surface. | The Browser skill's required control runtime was unavailable in this session, and its instructions prohibit substituting standalone automation or Computer Use. | Automated implementation and deployment are complete, but Phase 5 and Phase 4's outstanding deployed complete-first-flow evidence remain unaccepted until a real built-in-browser Gate B run. |
+| September 3, 2026 | Proceeded to Phase 6 while Phase 4 and Phase 5 external gates remain pending. | The user explicitly authorized Phase 6 despite the unavailable built-in browser-control runtime. | Phase 6 implementation/review may pass, but it does not accept or supersede either external gate. |
+| September 3, 2026 | Recovered the configured lowercase workspace from the clean local `NextPlay` checkout and verified dependencies with a fresh temporary npm cache. | `/Users/arhaan/Desktop/next-play` was missing, and the prior handoff recorded an empty `node_modules/@bramus/specificity`; an initial sandboxed online install could not progress. | Untouched commit `a4d6bba` reproduced the expected 78-test baseline after a clean elevated `npm ci`; `@bramus/specificity@2.4.2` and `jsdom@30.0.1` were valid. No package files changed. |
+| September 3, 2026 | Phase 6 primary manual visual acceptance remains blocked rather than being replaced with standalone browser automation. | The Browser skill was installed, but its required browser-client JavaScript runtime was not exposed to the orchestrator. | Automated polish, release review, deployment, and static HTTPS/bundle smoke passed; no formal viewport screenshots or interactive browser acceptance are claimed. |
 
 ## Active blockers
 
-- The current Codex session does not expose the Browser skill's required browser-client JavaScript control runtime. Real deployed Gate B, screenshots, and console inspection could not be executed.
+- The current Codex session does not expose the Browser skill's required browser-client JavaScript control runtime. Phase 6 primary visual acceptance, screenshots, and interactive production smoke could not be executed.
+- Phase 4's deployed complete-first-flow evidence and Phase 5 Gate B remain pending and unaccepted.
 
 ## Known risks
 
@@ -71,21 +114,22 @@ Record any accepted departure from `docs/DESIGN.md` here with date, reason, impa
 - Deadline allows no broad P1 work before both golden gates pass.
 - Phase 5 is not accepted until real deployed Gate B proves the five-tool first flow, coach intervention, r5 → r6 → r7 agent repair, deep A3/A4 preservation, final validation, and animation.
 - Built-in browser chrome is not capturable through Codex computer control; future external-gate records should continue pairing source-view discovery with page-state screenshots.
+- Release review reported a nonblocking 19px vertical document overflow at 1280×720 while also reporting no horizontal overflow and no hidden required content; re-check exact recording containment when browser control is restored.
 
 ## Exact next action
 
-Re-run Phase 5 deployed Gate B from a fresh Codex desktop built-in browser context with Site tools enabled. Do not begin Phase 6 until Gate B passes and Phase 5 is accepted.
+Phase 7 — Release Candidate and Hardening only. Keep feature freeze active, restore built-in browser control, complete the pending Phase 4/5 external evidence and Phase 6 manual visual acceptance, and fix only permitted release blockers. Phase 7 was not started here.
 
 ## Last phase handoff
 
 ```text
-Phase: Phase 5 — Human Lock and Agent Replan
-Status: AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED
-Behavior delivered: One fifth update_play_action tool; strict accepted patch input; command-layer delegation; expected-revision chaining; current live snapshots; direct and indirect lock protection; verified lock-preservation results and SYSTEM activity; five-tool all-or-nothing lifecycle.
-Files changed: Eight production WebMCP/application files, four test/helper files, Phase 5 blocked-gate evidence, and this durable status record.
-Tests added: 4 tests net; 78 total tests pass across 14 files (32 unit and 46 integration).
-Commands run and results: untouched npm ci and npm run verify PASS (74 tests); final typecheck, lint, unit, integration, full test, build, verify, and diff check PASS (78 tests); Vercel production build READY.
-Acceptance criteria demonstrated: Automated/local integration proves r5 → r6 → r7, deep A3/A4 equality, 7/7 final validation, 1.95-second animation result, correct activity, and five-tool lifecycle. Static production smoke proves the deployment is live, pristine defaults remain, and the five intended tool names are present.
-Known risks / deferred work: A real built-in-browser Gate B was not executable in this session. Phase 4's outstanding deployed complete-first-flow evidence and Phase 5 acceptance remain open. No Phase 6 work started.
-Recommended next phase: Re-run Phase 5 deployed Gate B; only after PASS proceed to Phase 6 — demo polish and immediate feature freeze.
+Phase: Phase 6 — Demo Polish and Feature Freeze
+Status: AUTOMATED POLISH PASS — MANUAL VISUAL ACCEPTANCE BLOCKED
+Behavior delivered: Court-primary desktop polish; honest five-tool/manual status; state-derived lock cues on court, timeline, and inspector; concise COACH/AGENT/SYSTEM activity with safe transient details; structured honest validation; exact copyable prompts; clearer playback; intentional pristine state; focus and reduced-motion treatment; immediate feature freeze.
+Files changed: Ten UI/style production files, one new focused Phase 6 integration test, three superseded-copy test updates, and this durable status record.
+Tests added: 8 tests net; 86 total tests pass across 15 files (32 unit and 54 integration).
+Commands run and results: clean temporary-cache npm install and untouched 78-test baseline PASS; final typecheck, lint, unit, integration, full test, build, verify, and diff check PASS (86 tests); Vercel production build READY; HTTPS/static bundle smoke PASS.
+Acceptance criteria demonstrated: Automated/local behavior covers pristine/manual/full-five status, arbitrary-ID locks and selected-lock coexistence, actor/revision/status details, non-mutating expansion and prompt copy, exact prompt literals, validation facts, transient playback, focus, reduced motion, and unchanged Phase 1–5 contracts. Release review passed with one nonblocking containment note.
+Known risks / deferred work: The required browser runtime was unavailable, so no primary 1280×720/1440×900/1920×1080 visual acceptance or screenshots are claimed. Phase 4's complete-first-flow evidence and Phase 5 Gate B remain open. Overall submission readiness is not accepted.
+Recommended next phase: Phase 7 — Release Candidate and Hardening only, under the active feature freeze.
 ```
