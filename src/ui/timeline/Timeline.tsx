@@ -30,6 +30,7 @@ export function Timeline({ actions, clockSeconds, currentSecond, selectedActionI
       <div className="timeline-heading">
         <p className="eyebrow">Player timeline</p>
         <h2 id="timeline-title">{actions.length === 0 ? "No actions yet" : "Live action timing"}</h2>
+        {actions.length === 0 ? <p className="timeline-empty-copy">Actions will appear here after the coach or agent adds them.</p> : null}
       </div>
       <div
         className="timeline-scale"
@@ -74,7 +75,6 @@ export function Timeline({ actions, clockSeconds, currentSecond, selectedActionI
           );
         })}
       </div>
-      {actions.length === 0 ? <p className="timeline-empty-copy">Actions will appear here after the coach or agent adds them.</p> : null}
     </section>
   );
 }

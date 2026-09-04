@@ -243,4 +243,16 @@ describe("Phase 6 presentation contracts", () => {
     expect(stylesheet).toMatch(/\.activity-event__heading b/);
     expect(stylesheet).toMatch(/\.timeline-action\.is-locked[^}]*border: 2px dashed/);
   });
+
+  it("keeps pristine timeline guidance in the heading without competing with the timing scale grid cell", () => {
+    const view = render(<Timeline actions={[]} clockSeconds={4.2} currentSecond={0} selectedActionId={undefined} onSelectAction={vi.fn()} />);
+    const timeline = view.container.querySelector(".timeline-shell");
+    const heading = timeline?.querySelector(".timeline-heading");
+    const scale = timeline?.querySelector(".timeline-scale");
+    const guidance = screen.getByText("Actions will appear here after the coach or agent adds them.");
+
+    expect(timeline).not.toBeNull();
+    expect(heading).toContainElement(guidance);
+    expect(scale).not.toContainElement(guidance);
+  });
 });
