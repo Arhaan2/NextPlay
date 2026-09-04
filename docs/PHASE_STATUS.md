@@ -1,11 +1,12 @@
 # Phase Status
 
 **Last updated:** September 3, 2026
-**Current phase:** Phase 6 — Demo Polish and Feature Freeze
-**Overall status:** AUTOMATED POLISH PASS — MANUAL VISUAL ACCEPTANCE BLOCKED; EXTERNAL PHASE 4/5 GATES STILL PENDING
+**Current phase:** Phase 7 — Release Candidate and Hardening
+**Overall status:** PASS — PHASE 7 RELEASE CANDIDATE ACCEPTED
 **Integration branch:** `main`
-**Known-good commit:** `41814991f1b2d5132fae67c162cda08a16a93bac`
+**Known-good commit:** `e774e5a7b1725720be1987827cf8e5a8dcbaf505`
 **Known-good deployment:** https://next-play-lake.vercel.app
+**Known-good deployment ID:** `dpl_BSr1FpJv5gfe4BrcwyAjL7yWvMop`
 **GitHub repository:** https://github.com/Arhaan2/NextPlay
 
 ## Phase table
@@ -16,10 +17,10 @@
 | 1. Domain/commands | PASS | `462928fa53b995641e90c5c6effa23eaaba3220a` | `npm ci`; `npm run verify` PASS (24 tests) | n/a | Test files are included in root static typechecking. DEV harness and production-preview smoke passed. |
 | 2. Court/timeline | PASS | `11fbb3e8a8c0a398632d1e500a3115d76f520f32` | `npm ci`; `npm run verify` PASS (38 tests) | PASS — 1280×720 local flow, production preview, and fresh public browser | Canonical A1–A6 fixture is rendered through the DEV-only command harness; acceptance screenshot: `artifacts/phase-2-coach-edit-1280x720.png`. |
 | 3. WebMCP read/add | PASS | `590a2fcd00ce4ea5cd63aae69683428dbba4ed2b` | `npm ci`; `npm run verify` PASS (53 tests) | PASS — real deployed Gate A, r0 → r1 | Exactly `get_play_state` and `add_play_actions`; evidence in `artifacts/phase-3/`. |
-| 4. Validation/animation | AUTOMATED PASS — EXTERNAL FIRST FLOW PENDING | `4b68fc6163bf811f4f2d4fe50b490444ab5c643f` | `npm ci`; `npm run verify` PASS (74 tests across 13 files) | PENDING — deployed complete first flow | Phase 4 feature implementation and release review passed; acceptance history remains open until real deployed first-flow evidence exists. |
-| 5. Lock/replan | AUTOMATED IMPLEMENTATION PASS — EXTERNAL GATE B BLOCKED | `97d4240788b798aeffed24ad2694fec8411eff63` | `npm run verify` PASS (78 tests across 14 files) | BLOCKED — required built-in browser control unavailable | Deployed as `dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz`; static production smoke passed; no Gate B claims fabricated. |
-| 6. Polish/freeze | AUTOMATED POLISH PASS — MANUAL VISUAL ACCEPTANCE BLOCKED | `41814991f1b2d5132fae67c162cda08a16a93bac` | `npm run verify` PASS (86 tests across 15 files) | BLOCKED — required built-in browser-control runtime unavailable | UI-only polish is deployed as `dpl_yx74y3fxaySjh3BfzitxRcdfbSLA`; feature freeze is active; Phase 4/5 external gates remain pending. |
-| 7. Release candidate | NOT STARTED | | | two full runs | |
+| 4. Validation/animation | PASS | `4b68fc6163bf811f4f2d4fe50b490444ab5c643f` | `npm ci`; `npm run verify` PASS (74 tests across 13 files) | PASS — deployed complete first flow repeated twice during Phase 7 | Both fresh RC contexts completed read → add → 7/7 validation → 2.15-second animation with visible court/timeline/activity state. |
+| 5. Lock/replan | PASS | `97d4240788b798aeffed24ad2694fec8411eff63` | `npm run verify` PASS (78 tests across 14 files) | PASS — deployed Gate B repeated twice during Phase 7 | Both runs preserved complete A3/A4 snapshots, updated only A5/A6 at r6/r7, validated 7/7, and animated to 1.95 seconds. |
+| 6. Polish/freeze | PASS | `41814991f1b2d5132fae67c162cda08a16a93bac` | `npm run verify` PASS (86 tests across 15 files) | PASS — 1280×720, 1440×900, and 1920×1080 live checks | Feature freeze remains active; the 19px 1280×720 overflow was fixed under the Phase 7 severe-layout exception and rechecked in production. |
+| 7. Release candidate | PASS — RELEASE CANDIDATE ACCEPTED | `e774e5a7b1725720be1987827cf8e5a8dcbaf505` | `npm run verify` PASS (87 tests across 15 files); exact-commit fresh clone PASS | PASS — two complete fresh-context production runs | NextPlay RC1 is deployed as `dpl_BSr1FpJv5gfe4BrcwyAjL7yWvMop`; manifest: `artifacts/phase-7/RELEASE_CANDIDATE.md`. |
 | 8. Final/submission | NOT STARTED | | | five full runs | |
 
 ## Current prerequisites
@@ -43,7 +44,7 @@
 - [x] Test runner passed typecheck, lint, 32 unit tests, 46 integration tests, 78 total tests, build, verify, and diff check.
 - [x] Release review returned PASS WITH NONBLOCKING NOTES.
 - [x] Feature commit `97d4240788b798aeffed24ad2694fec8411eff63` is pushed to `origin/main` and deployed Ready as `dpl_ESxDHXP1X44xjLhjnZPZpE5zxFnz`.
-- [ ] Real deployed Gate B remains required; evidence and the browser-control blocker are recorded in `artifacts/phase-5/GATE_B.md`.
+- [x] Real deployed Gate B passed twice during Phase 7 against production deployment `dpl_BSr1FpJv5gfe4BrcwyAjL7yWvMop`; the earlier blocked artifact remains as accurate historical evidence.
 
 ## Phase 6 implementation and freeze evidence
 
@@ -55,8 +56,24 @@
 - [x] Release review returned `PASS WITH NONBLOCKING NOTES`; it reported no horizontal overflow or hidden required content, plus a nonblocking 19px document-height overflow at 1280×720 to re-check before recording.
 - [x] Feature commit `41814991f1b2d5132fae67c162cda08a16a93bac` is pushed to `origin/main` and deployed Ready as `dpl_yx74y3fxaySjh3BfzitxRcdfbSLA` at https://next-play-lake.vercel.app.
 - [x] HTTPS returns 200; the deployed bundle contains the Phase 6 pristine/manual/prompt presentation and excludes the DEV command harness.
-- [ ] Primary manual visual acceptance and required screenshots were not fabricated: the Browser skill was present, but its required browser-control runtime was not exposed in this session.
-- [ ] Phase 4's deployed complete-first-flow evidence and Phase 5 Gate B remain pending; neither phase is marked accepted by Phase 6 work or deployment smoke.
+- [x] Primary live visual acceptance passed at 1280×720, 1440×900, and 1920×1080 with visible required controls, no outer-page overflow, visible focus treatment, and one ordinary-browser pristine screenshot in `artifacts/phase-7/`.
+- [x] Phase 4's deployed complete-first-flow evidence and Phase 5 Gate B passed twice during Phase 7; the original Phase 6 record remains historical rather than a fabricated retroactive claim.
+
+## Phase 7 release-candidate evidence
+
+- [x] Starting `main` was clean and matched `origin/main` at `247a27bf06b704be4bf9712124870b405b97eb54`; Phase 6 feature/status commits and active feature freeze were confirmed.
+- [x] Primary clean install used isolated cache `/private/tmp/nextplay-p7-cache.P5Za8a`; dependency tree and direct `@bramus/specificity` ESM import passed without package-file changes.
+- [x] Initial and exact-candidate fresh clones passed. The final clone at `/private/tmp/nextplay-p7-final-clone.dgZTeT` matched `e774e5a7b1725720be1987827cf8e5a8dcbaf505`, passed `npm run verify`, and was safely removed; cache `/private/tmp/nextplay-p7-final-cache.Ei9FJW` was retained.
+- [x] Final gate passed: 32 unit tests, 55 integration tests, 87 total tests across 15 files, zero-warning lint, typecheck, build, full verify, and diff check.
+- [x] Test-integrity, source/scope, repository, secret, ignored-file, and production-bundle audits passed. The frozen five-tool order is unchanged and no lock/unlock tool or DEV harness is exposed.
+- [x] The prior 19px pristine overflow at 1280×720 was reproduced as a severe recording-layout defect. Fix cycle 1 was rejected because it risked overlap; fix cycle 2 moved empty guidance into the timeline heading, added a structural regression, passed the full gate/review, and removed the deployed overflow without hidden controls.
+- [x] Candidate code commit `e774e5a7b1725720be1987827cf8e5a8dcbaf505` was pushed and deployed READY as `dpl_BSr1FpJv5gfe4BrcwyAjL7yWvMop` at https://next-play-lake.vercel.app.
+- [x] Normal production smoke and clean-Chrome manual-mode smoke passed; production begins with ten players, O1 possession, 4.2 seconds, zero actions, validation not run, idle animation, exact prompts, and no DEV harness.
+- [x] Both fresh-context production runs discovered exactly five tools and completed r0→r1 first construction, 7/7 validation, 2.15-second animation, r1→r5 coach intervention, r5→r7 unlocked-only repair, 7/7 validation, and 1.95-second final animation.
+- [x] Both runs deeply preserved A3/A4, changed only A5/A6 during repair, displayed COACH/AGENT/SYSTEM activity, reset to pristine, and produced zero page console errors.
+- [x] Isolated production negatives returned `ACTION_LOCKED`, `STALE_PLAY_STATE`, `PLAY_INVALID`, and atomic invalid-input behavior without changing the rejected revisions.
+- [x] Release-candidate manifest and ordinary-browser screenshot are stored in `artifacts/phase-7/`.
+- [x] Phase 7/8 split is clarified: Phase 8 owns five final runs, video, submission screenshots/copy, uploads, and submission. None of that work began in Phase 7.
 
 ## Feature freeze
 
@@ -102,34 +119,35 @@ Record any accepted departure from `docs/DESIGN.md` here with date, reason, impa
 | September 3, 2026 | Proceeded to Phase 6 while Phase 4 and Phase 5 external gates remain pending. | The user explicitly authorized Phase 6 despite the unavailable built-in browser-control runtime. | Phase 6 implementation/review may pass, but it does not accept or supersede either external gate. |
 | September 3, 2026 | Recovered the configured lowercase workspace from the clean local `NextPlay` checkout and verified dependencies with a fresh temporary npm cache. | `/Users/arhaan/Desktop/next-play` was missing, and the prior handoff recorded an empty `node_modules/@bramus/specificity`; an initial sandboxed online install could not progress. | Untouched commit `a4d6bba` reproduced the expected 78-test baseline after a clean elevated `npm ci`; `@bramus/specificity@2.4.2` and `jsdom@30.0.1` were valid. No package files changed. |
 | September 3, 2026 | Phase 6 primary manual visual acceptance remains blocked rather than being replaced with standalone browser automation. | The Browser skill was installed, but its required browser-client JavaScript runtime was not exposed to the orchestrator. | Automated polish, release review, deployment, and static HTTPS/bundle smoke passed; no formal viewport screenshots or interactive browser acceptance are claimed. |
+| September 3, 2026 | Phase 7 is limited to a technical release candidate and two complete production runs; submission production moves to Phase 8. | The explicit Phase 7 brief supersedes the older combined release/submission phase wording. | Five final runs, video, submission screenshots/copy, uploads, and submission were not started here. |
+| September 3, 2026 | The 19px pristine overflow at 1280×720 was treated as a severe recording-layout defect under feature freeze. | Live geometry proved the empty timeline message created an implicit grid row; the first remedy was rejected for overlap risk. | A structural test and three-line DOM/CSS correction removed the overflow without changing tools, domain behavior, validation, animation, or product scope. |
 
 ## Active blockers
 
-- The current Codex session does not expose the Browser skill's required browser-client JavaScript control runtime. Phase 6 primary visual acceptance, screenshots, and interactive production smoke could not be executed.
-- Phase 4's deployed complete-first-flow evidence and Phase 5 Gate B remain pending and unaccepted.
+- None for Phase 7 release-candidate acceptance.
+- The in-app browser screenshot endpoint failed and Codex safety blocks OS-level capture of its own window. Phase 8 must use an available user-visible capture path for final submission screenshots/video; the production flows themselves were fully executed and recorded through the built-in WebMCP browser runtime.
 
 ## Known risks
 
 - Vercel is not connected to GitHub for automatic deployments; releases require the CLI until the account connection is added.
-- Deadline allows no broad P1 work before both golden gates pass.
-- Phase 5 is not accepted until real deployed Gate B proves the five-tool first flow, coach intervention, r5 → r6 → r7 agent repair, deep A3/A4 preservation, final validation, and animation.
-- Built-in browser chrome is not capturable through Codex computer control; future external-gate records should continue pairing source-view discovery with page-state screenshots.
-- Release review reported a nonblocking 19px vertical document overflow at 1280×720 while also reporting no horizontal overflow and no hidden required content; re-check exact recording containment when browser control is restored.
+- Feature freeze remains active; no P1 work is authorized before Phase 8 acceptance and submission work.
+- Built-in browser chrome is not capturable through Codex computer control; Phase 8 should establish a user-visible screenshot/video capture path before the final five-run sequence.
+- Phase 8 final five-run acceptance, public video, submission screenshots/copy, uploads, and submission remain undone by design.
 
 ## Exact next action
 
-Phase 7 — Release Candidate and Hardening only. Keep feature freeze active, restore built-in browser control, complete the pending Phase 4/5 external evidence and Phase 6 manual visual acceptance, and fix only permitted release blockers. Phase 7 was not started here.
+Phase 8 — run five consecutive fresh-session golden flows on NextPlay RC1, capture the public demo video and submission screenshots/copy, verify public permissions, upload, and submit. Keep feature freeze active and do not add capability.
 
 ## Last phase handoff
 
 ```text
-Phase: Phase 6 — Demo Polish and Feature Freeze
-Status: AUTOMATED POLISH PASS — MANUAL VISUAL ACCEPTANCE BLOCKED
-Behavior delivered: Court-primary desktop polish; honest five-tool/manual status; state-derived lock cues on court, timeline, and inspector; concise COACH/AGENT/SYSTEM activity with safe transient details; structured honest validation; exact copyable prompts; clearer playback; intentional pristine state; focus and reduced-motion treatment; immediate feature freeze.
-Files changed: Ten UI/style production files, one new focused Phase 6 integration test, three superseded-copy test updates, and this durable status record.
-Tests added: 8 tests net; 86 total tests pass across 15 files (32 unit and 54 integration).
-Commands run and results: clean temporary-cache npm install and untouched 78-test baseline PASS; final typecheck, lint, unit, integration, full test, build, verify, and diff check PASS (86 tests); Vercel production build READY; HTTPS/static bundle smoke PASS.
-Acceptance criteria demonstrated: Automated/local behavior covers pristine/manual/full-five status, arbitrary-ID locks and selected-lock coexistence, actor/revision/status details, non-mutating expansion and prompt copy, exact prompt literals, validation facts, transient playback, focus, reduced motion, and unchanged Phase 1–5 contracts. Release review passed with one nonblocking containment note.
-Known risks / deferred work: The required browser runtime was unavailable, so no primary 1280×720/1440×900/1920×1080 visual acceptance or screenshots are claimed. Phase 4's complete-first-flow evidence and Phase 5 Gate B remain open. Overall submission readiness is not accepted.
-Recommended next phase: Phase 7 — Release Candidate and Hardening only, under the active feature freeze.
+Phase: Phase 7 — Release Candidate and Hardening
+Status: PASS — RELEASE CANDIDATE ACCEPTED
+Behavior delivered: One reproducible, public, five-tool NextPlay RC with the prior 1280×720 overflow corrected; two complete deployed human-agent golden flows; truthful public documentation; release/rollback evidence.
+Files changed: Timeline empty-state placement and its structural regression; product README; Phase 7 brief/status; Phase 7 manifest and pristine/manual-mode screenshot.
+Tests added: 1 integration regression; 87 total tests pass across 15 files (32 unit and 55 integration).
+Commands run and results: Primary clean install and full gate PASS; exact-candidate fresh clone and full gate PASS; typecheck, zero-warning lint, unit, integration, total tests, build, verify, and diff checks PASS; production deployment READY; HTTP/assets/bundle/static/manual/viewport smoke PASS; two real production flows and isolated negatives PASS.
+Acceptance criteria demonstrated: Exactly five tools; pristine r0; Flow A r0→r1 with 7/7 and 2.15 seconds; coach r1→r5; Flow B r5→r7 with A3/A4 deeply unchanged, only A5/A6 changed, 7/7, and 1.95 seconds; Reset twice; zero page console errors; all three viewports contained.
+Known risks / deferred work: Automatic Vercel deployment is not connected. The protected in-app screenshot path was unavailable, so Phase 8 must capture final submission media through a user-visible path. No Phase 8 work has begun.
+Recommended next phase: Phase 8 — final five-run acceptance, video, and submission, with feature freeze still active.
 ```
