@@ -64,7 +64,7 @@ export function Court({ document, animation, selectedActionId, webMcpAvailable =
       </svg>
       {document.actions.length === 0 ? (
         <div className="court-empty-state">
-          <p className="eyebrow">Court workspace</p>
+          <p className="eyebrow">SLOB formation ready</p>
           <h2>SLOB formation loaded</h2>
           <p>Ask your agent to design the play, or use the coach controls manually.</p>
           {webMcpAvailable ? null : <p className="court-empty-state__manual-note">Site tools are unavailable in this browser; coach controls remain available.</p>}

@@ -36,6 +36,19 @@ function present(value: string | undefined): string {
   return value === undefined ? "—" : value.replaceAll("_", " ");
 }
 
+function selectedActionSummary(action: PlayAction): string {
+  if (action.type === "screen") {
+    return `${action.actorId} screening for ${action.targetPlayerId}`;
+  }
+  if ("targetPlayerId" in action) {
+    return `${action.actorId} targeting ${action.targetPlayerId}`;
+  }
+  if ("destinationZone" in action) {
+    return `${action.actorId} moving to ${present(action.destinationZone)}`;
+  }
+  return `${action.actorId} action`;
+}
+
 export function ActionInspector({ action, revision, onResult }: ActionInspectorProps) {
   const [draft, setDraft] = useState<ActionDraft | undefined>(action === undefined ? undefined : createDraft(action));
 
@@ -80,19 +93,25 @@ export function ActionInspector({ action, revision, onResult }: ActionInspectorP
 
   return (
     <section className="rail-section inspector" aria-labelledby="inspector-title">
-      <div className="panel-heading"><h2 id="inspector-title">Action inspector</h2><span>{selectedAction.id}</span></div>
-      <dl className="action-details">
+      <div className="panel-heading"><h2 id="inspector-title">Action inspector</h2><span>{selectedAction.locked ? "🔒 Locked" : "Selected"}</span></div>
+      <p className="inspector-action-title">{selectedAction.id} · {present(selectedAction.label ?? selectedAction.type).toUpperCase()}</p>
+      <p className="inspector-action-summary">{selectedActionSummary(selectedAction)}</p>
+      {selectedAction.locked ? <p className="lock-notice" role="status"><strong>🔒 COACH LOCKED</strong> Protected from agent edits. Coach locked — tactical fields are protected from agent edits.</p> : <p className="unlock-notice">UNLOCKED · Available for coach or agent revision.</p>}
+      <dl className="action-details action-details--timing">
+        <div><dt>Start</dt><dd>{selectedAction.startSecond.toFixed(2)}s</dd></div>
+        <div><dt>Duration</dt><dd>{selectedAction.durationSecond.toFixed(2)}s</dd></div>
+        <div><dt>End</dt><dd>{(selectedAction.startSecond + selectedAction.durationSecond).toFixed(2)}s</dd></div>
+        <div><dt>Modified</dt><dd>{selectedAction.lastModifiedBy} · r{selectedAction.updatedAtRevision}</dd></div>
+      </dl>
+      <dl className="action-details action-details--context">
         <div><dt>Type</dt><dd>{selectedAction.type}</dd></div>
         <div><dt>Actor</dt><dd>{selectedAction.actorId}</dd></div>
         <div><dt>Target</dt><dd>{"targetPlayerId" in selectedAction ? selectedAction.targetPlayerId : "—"}</dd></div>
         <div><dt>Screen</dt><dd>{"screenType" in selectedAction ? present(selectedAction.screenType) : "—"}</dd></div>
         <div><dt>Path</dt><dd>{present(selectedAction.pathStyle)}</dd></div>
-        <div><dt>End</dt><dd>{(selectedAction.startSecond + selectedAction.durationSecond).toFixed(2)}s</dd></div>
         <div><dt>Lock</dt><dd>{selectedAction.locked ? "🔒 Coach locked" : "Unlocked"}</dd></div>
         <div><dt>Created</dt><dd>{selectedAction.createdBy}</dd></div>
-        <div><dt>Modified</dt><dd>{selectedAction.lastModifiedBy} · r{selectedAction.updatedAtRevision}</dd></div>
       </dl>
-      {selectedAction.locked ? <p className="lock-notice" role="status">Coach locked — tactical fields are protected from agent edits.</p> : null}
       <form className="inspector-form" onSubmit={apply} noValidate>
         <label>Start second<input type="number" step="0.01" min="0" value={actionDraft.startSecond} disabled={selectedAction.locked} onChange={(event) => updateDraft("startSecond", event.target.value)} /></label>
         <label>Duration second<input type="number" step="0.01" min="0.01" value={actionDraft.durationSecond} disabled={selectedAction.locked} onChange={(event) => updateDraft("durationSecond", event.target.value)} /></label>

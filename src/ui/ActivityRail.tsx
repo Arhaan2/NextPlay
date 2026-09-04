@@ -62,7 +62,7 @@ export function ActivityRail({ activity, webMcpAvailable }: ActivityRailProps) {
             const isExpanded = expanded.includes(event.id);
             return (
             <li key={event.id} className={`activity-event activity-event--${event.status} activity-event--${event.actor}`}>
-              <div className="activity-event__heading"><strong>{actorLabel(event.actor)}</strong><span>{operationLabel(event.operation)}</span><b>{event.status}</b></div>
+              <div className="activity-event__heading"><strong>{actorLabel(event.actor)}</strong><span>{operationLabel(event.operation)}</span><small>r{event.revisionBefore} → r{event.revisionAfter}</small><b>{event.status}</b></div>
               <p>{event.summary}</p>
               <small>{event.channel.toUpperCase()} · r{event.revisionBefore} → r{event.revisionAfter}</small>
               {details === undefined ? null : <>

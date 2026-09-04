@@ -35,9 +35,9 @@ describe("NextPlay Phase 0 shell", () => {
     for (const playerId of ["O1", "O2", "O3", "O4", "O5"]) {
       expect(screen.getByTestId(`timeline-row-${playerId}`)).toBeVisible();
     }
-    expect(screen.getByText("Example prompt")).toBeVisible();
-    expect(
-      screen.getByText(/add the six-action right-corner sequence/),
-    ).toBeVisible();
+    expect(screen.getByText("Demo prompts")).toBeVisible();
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "NextPlay" })).toBeVisible();
+    expect(scenarioSummary).toHaveTextContent("SLOB · Man · 4.2 seconds · r0");
   });
 });

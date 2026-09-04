@@ -53,6 +53,12 @@ export function ActionPath({ action, document, selected, onSelect }: ActionPathP
           {action.locked ? "▣ " : ""}{actionLabel(action)}
         </text>
       </g>
+      {action.locked ? (
+        <g className="court-action__lock-badge" aria-hidden="true" pointerEvents="none">
+          <circle cx={geometry.labelAnchor.x + 4.1} cy={geometry.labelAnchor.y - 3.1} r="1.45" />
+          <path d={`M ${geometry.labelAnchor.x + 3.45} ${geometry.labelAnchor.y - 3.05} V ${geometry.labelAnchor.y - 3.7} A 0.65 0.65 0 0 1 ${geometry.labelAnchor.x + 4.75} ${geometry.labelAnchor.y - 3.7} V ${geometry.labelAnchor.y - 3.05}`} />
+        </g>
+      ) : null}
     </g>
   );
 }

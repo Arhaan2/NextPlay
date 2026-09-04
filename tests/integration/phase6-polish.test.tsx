@@ -16,6 +16,7 @@ import { Timeline } from "../../src/ui/timeline/Timeline";
 import { playStore } from "../../src/state/playStore";
 import stylesheet from "../../src/styles.css?raw";
 import { createWebMcpToolDefinitions } from "../../src/webmcp/registerTools";
+import appSource from "../../src/App.tsx?raw";
 import { createPlayTestContext } from "../helpers/playTestContext";
 import { createFakeModelContext } from "../helpers/webMcpTestContext";
 
@@ -200,6 +201,9 @@ describe("Phase 6 presentation contracts", () => {
     await user.click(screen.getByText("Demo prompts"));
     expect(screen.getByText(EXPECTED_FIRST_DEMO_PROMPT)).toBeVisible();
     expect(screen.getByText(EXPECTED_SECOND_DEMO_PROMPT)).toBeVisible();
+    await user.click(screen.getByText("Demo prompts"));
+    expect(screen.queryByText(EXPECTED_FIRST_DEMO_PROMPT)).not.toBeVisible();
+    await user.click(screen.getByText("Demo prompts"));
     await user.click(screen.getByRole("button", { name: "Copy first play demo prompt" }));
     const replanCopy = screen.getByRole("button", { name: "Copy replan demo prompt" });
     replanCopy.focus();
@@ -233,15 +237,23 @@ describe("Phase 6 presentation contracts", () => {
     expect(playStore.getState().document.playRevision).toBe(revision);
   });
 
-  it("keeps desktop containment, visible focus, non-color state words, and reduced-motion rules in the stylesheet", () => {
+  it("keeps the production shell contained at recording size with an internal rail, positioned prompt drawer, and reduced motion", () => {
     expect(stylesheet).toMatch(/button:focus-visible[^}]*outline: 2px solid/);
     expect(stylesheet).toMatch(/\.court-action:focus-visible/);
     expect(stylesheet).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*transition-duration: 0\.01ms/);
-    expect(stylesheet).toMatch(/\.app-shell \{[^}]*width: min\(1480px, 100%\)/);
+    expect(stylesheet).toMatch(/body \{[^}]*min-height: 100vh[^}]*overflow: hidden/);
+    expect(stylesheet).toMatch(/\.app-shell \{[^}]*width: min\(1480px, 100%\)[^}]*height: 100vh/);
+    expect(stylesheet).toMatch(/\.workspace \{[^}]*grid-template-columns: minmax\(0, 1fr\) 320px[^}]*height: min\(62vh, 450px\)[^}]*min-height: 420px[^}]*overflow: hidden/);
+    expect(stylesheet).toMatch(/\.timeline-shell \{[^}]*height: 126px[^}]*overflow: hidden/);
     expect(stylesheet).toMatch(/\.side-rail \{[^}]*overflow-y: auto[^}]*overscroll-behavior: contain/);
+    expect(stylesheet).toMatch(/\.demo-prompts__list \{[^}]*position: absolute[^}]*top: calc\(100% \+ 8px\)[^}]*right: 0[^}]*width: min\(640px, calc\(100vw - 32px\)\)/);
     expect(stylesheet).toMatch(/\.activity-event__details \{[^}]*max-width: 100%[^}]*overflow: auto[^}]*overflow-wrap: anywhere/);
     expect(stylesheet).toMatch(/\.activity-event__heading b/);
     expect(stylesheet).toMatch(/\.timeline-action\.is-locked[^}]*border: 2px dashed/);
+  });
+
+  it("keeps the development harness outside production bundles", () => {
+    expect(appSource).toMatch(/import\.meta\.env\.DEV \? <DomainHarness \/> : null/);
   });
 
   it("keeps pristine timeline guidance in the heading without competing with the timing scale grid cell", () => {

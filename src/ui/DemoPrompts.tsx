@@ -40,21 +40,16 @@ function PromptCard({ label, prompt }: PromptCardProps) {
 
 export function DemoPrompts() {
   return (
-    <footer className="prompt-bar demo-prompts" aria-labelledby="demo-prompts-title">
+    <div className="demo-prompts" aria-labelledby="demo-prompts-title">
       <details>
         <summary>
-          <span>
-            <span className="eyebrow">Example prompt</span>
-            <strong id="demo-prompts-title">Demo prompts</strong>
-            <span className="demo-prompts__legacy-copy">Start with the first prompt to add the six-action right-corner sequence, then validate it.</span>
-          </span>
-          <span className="demo-prompts__summary-copy">Two exact, copyable site-tool prompts</span>
+          <strong id="demo-prompts-title">Demo prompts</strong>
         </summary>
         <div className="demo-prompts__list">
           <PromptCard label="First play" prompt={FIRST_DEMO_PROMPT} />
           <PromptCard label="Replan" prompt={SECOND_DEMO_PROMPT} />
         </div>
       </details>
-    </footer>
+    </div>
   );
 }

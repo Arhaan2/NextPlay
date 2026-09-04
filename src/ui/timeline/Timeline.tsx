@@ -66,6 +66,7 @@ export function Timeline({ actions, clockSeconds, currentSecond, selectedActionI
                       onKeyDown={(event) => actionKeyboardSelect(event, action.id, onSelectAction)}
                     >
                       <span>{action.locked ? "▣ " : ""}{actionLabel(action)}</span>
+                      {action.locked ? <b className="timeline-action__lock" aria-hidden="true">LOCK</b> : null}
                       <small>{action.id} · {formatSecond(action.startSecond)}</small>
                     </button>
                   );
