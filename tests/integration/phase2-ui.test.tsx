@@ -117,7 +117,7 @@ describe("Phase 2 coach workspace", () => {
     expect(ball).toHaveAttribute("cy", String(o1Display.y - 3.2));
   });
 
-  it("places the zero-action empty-state card in bottom backcourt space instead of centering it over preset markers", () => {
+  it("places the zero-action empty-state card at the lower court edge without covering the formation", () => {
     render(<App />);
     const court = screen.getByTestId("court");
     const emptyState = screen.getByRole("heading", { name: "SLOB formation loaded" }).closest("div");
@@ -126,9 +126,9 @@ describe("Phase 2 coach workspace", () => {
     }
 
     expect(court).toContainElement(emptyState);
-    expect(stylesheet).toMatch(/\.court-empty-state \{[^}]*position: absolute[^}]*left: 50%[^}]*bottom: 12px[^}]*transform: translateX\(-50%\)[^}]*\}/);
+    expect(stylesheet).toMatch(/\.court-empty-state \{[^}]*position: absolute[^}]*left: 16px[^}]*bottom: 16px[^}]*width: min\(340px, 48%\)[^}]*\}/);
     expect(stylesheet).not.toMatch(/\.court-empty-state \{[^}]*top: 50%/);
-    expect(stylesheet).not.toMatch(/\.court-empty-state \{[^}]*translate\(-50%, -50%\)/);
+    expect(stylesheet).not.toMatch(/\.court-empty-state \{[^}]*transform:/);
   });
 
   it("renders the canonical command-loaded batch exactly once on both views", () => {
@@ -301,7 +301,7 @@ describe("Phase 2 coach workspace", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
     expect(playStore.getState().document).toMatchObject({ clockSeconds: 2, playRevision: beforeRevision + 1 });
-    expect(screen.getByText("2.0 seconds")).toBeVisible();
+    expect(screen.getByRole("region", { name: "Demo scenario summary" })).toHaveTextContent("SLOB · Man · 2.0 seconds");
     const timelineScale = screen.getByLabelText("Timeline scale ending at 2 seconds");
     expect(timelineScale).toBeVisible();
     expect(timelineScale).toHaveAccessibleDescription("Overflow actions extend the visual scale to 2.15 seconds.");
@@ -320,7 +320,7 @@ describe("Phase 2 coach workspace", () => {
     expect(screen.getByText("set clock")).toBeVisible();
   });
 
-  it("keeps a selected action in the fixed 340px court workspace with an internally scrolling rail and following timeline composition", async () => {
+  it("keeps a selected action in the contained film-room workspace with an internal rail and header prompt drawer", async () => {
     const user = userEvent.setup();
     loadGoldenActions();
     render(<App />);
@@ -330,16 +330,17 @@ describe("Phase 2 coach workspace", () => {
     const court = screen.getByTestId("court");
     const rail = screen.getByRole("complementary", { name: "Agent and validation status" });
     const timeline = screen.getByRole("region", { name: "Live action timing" });
-    const prompt = screen.getByText("Example prompt").closest("footer");
+    const prompt = screen.getByText("Demo prompts").closest(".demo-prompts");
 
-    expect(stylesheet).toMatch(/\.workspace \{[^}]*height: 340px[^}]*min-height: 0[^}]*\}/);
-    expect(stylesheet).toMatch(/\.court \{[^}]*height: 340px[^}]*\}/);
+    expect(stylesheet).toMatch(/\.workspace \{[^}]*grid-template-columns: minmax\(0, 1fr\) 320px[^}]*height: min\(62vh, 450px\)[^}]*min-height: 420px[^}]*overflow: hidden[^}]*\}/);
+    expect(stylesheet).toMatch(/\.court \{[^}]*height: 100%[^}]*\}/);
     expect(stylesheet).toMatch(/\.side-rail \{[^}]*overflow-y: auto[^}]*\}/);
     expect(workspace).toContainElement(court);
     expect(workspace).toContainElement(rail);
     expect(workspace.nextElementSibling).toBe(timeline);
-    expect(timeline.nextElementSibling).toBe(prompt);
-    expect(screen.getByRole("heading", { name: "Action inspector" }).parentElement).toHaveTextContent("A3");
+    expect(prompt?.closest("header")).toBe(screen.getByRole("banner"));
+    expect(prompt?.querySelector("details")).not.toHaveAttribute("open");
+    expect(screen.getByRole("heading", { name: "Action inspector" }).closest("section")).toHaveTextContent("A3");
   });
 
   it("uses one clamped O1 coordinate for the marker, ball, and A5 pass start while keeping A5's label clear", () => {

@@ -31,7 +31,8 @@ export function ValidationPanel({ report, onMessage }: Props) {
   return <section className="rail-section validation-panel" aria-labelledby="checks-title" aria-live="polite">
     <div className="panel-heading"><h2 id="checks-title">Play checks</h2><span>{report.status === "not_run" ? "—" : `${report.checksPassed}/${report.checksTotal}`}</span></div>
     {report.status === "not_run" ? <><p className="empty-state">Validation has not been run yet.</p><button className="secondary-button validation-panel__run" type="button" onClick={run}>Run checks</button></> : <>
-      <p className={report.valid ? "validation-summary is-valid" : "validation-summary is-invalid"}>{report.valid ? `${report.checksPassed}/${report.checksTotal} execution checks passed` : `${report.checksPassed}/${report.checksTotal} execution checks passed · ${invalidSummary}`}</p>
+      <p className={report.valid ? "validation-summary is-valid" : "validation-summary is-invalid"}>{report.valid ? <><span aria-hidden="true">✓ </span><span>{report.checksPassed}/{report.checksTotal} execution checks passed</span></> : hasOnlyGoldenClockOverflow ? "! Timing conflict" : `${report.checksPassed}/${report.checksTotal} execution checks passed · ${invalidSummary}`}</p>
+      {!report.valid && hasOnlyGoldenClockOverflow ? <p className="validation-summary-detail">{report.checksPassed}/{report.checksTotal} execution checks passed · {invalidSummary}</p> : null}
       <small className="validation-revision">Validated at revision {report.validatedRevision}</small>
       {report.valid ? <small className="validation-zero-errors">0 errors</small> : null}
       <ul className="validation-checks">{report.checks.filter((check) => check.status !== "not_applicable").map((check) => <li key={check.id} className={`is-${check.status}`}>{check.label}: {check.status === "passed" ? "passed" : `${check.errorCount} error${check.errorCount === 1 ? "" : "s"}`}</li>)}</ul>
